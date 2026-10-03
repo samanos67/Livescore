@@ -4,7 +4,7 @@ class ApiConstants {
   //   e.g. 'https://livescore-backend.onrender.com'
   // For local testing, use 'http://10.0.2.2:3000' (Android emulator)
   // or 'http://<YOUR_LOCAL_IP>:3000' (physical device on same Wi-Fi)
-  static const String backendUrl = 'http://10.0.2.2:3000';
+  static const String backendUrl = 'https://livescore-backend-ju3x.onrender.com';
 
   // ─── YouTube (still called directly, no quota concern) ───────────────────
   static const String youtubeBaseUrl = 'https://www.googleapis.com/youtube/v3';
