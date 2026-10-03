@@ -1,0 +1,14 @@
+services:
+  - type: web
+    name: livescore-backend
+    env: node
+    plan: free
+    buildCommand: npm install
+    startCommand: npm start
+    envVars:
+      - key: FOOTBALL_DATA_API_KEY
+        sync: false
+      - key: API_FOOTBALL_KEY
+        sync: false
+      - key: SELF_PING_URL
+        sync: false
