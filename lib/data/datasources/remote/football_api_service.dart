@@ -148,4 +148,95 @@ class FootballApiService {
       return [];
     }
   }
+
+  // ─── Team Info ────────────────────────────────────────────────────────────
+
+  Future<Map<String, dynamic>?> getTeamInfo(int teamId) async {
+    try {
+      final data = await _get('/teams/$teamId');
+      final resp = data['response'];
+      if (resp is Map) return Map<String, dynamic>.from(resp);
+      return null;
+    } catch (_) {
+      return null;
+    }
+  }
+
+  // ─── Team Squad ───────────────────────────────────────────────────────────
+
+  Future<List<Map<String, dynamic>>> getTeamSquad(int teamId) async {
+    try {
+      final data = await _get('/teams/$teamId/squad');
+      final list = (data['response'] as List?) ?? [];
+      return list
+          .whereType<Map>()
+          .map((e) => Map<String, dynamic>.from(e))
+          .toList();
+    } catch (_) {
+      return [];
+    }
+  }
+
+  // ─── Team Fixtures ────────────────────────────────────────────────────────
+
+  Future<List<FixtureModel>> getTeamFixtures(int teamId, {String season = '2024'}) async {
+    try {
+      final data = await _get('/teams/$teamId/fixtures', params: {'season': season});
+      final list = (data['response'] as List?) ?? [];
+      final result = <FixtureModel>[];
+      for (var item in list) {
+        try {
+          if (item is Map) result.add(FixtureModel.fromJson(Map<String, dynamic>.from(item)));
+        } catch (_) {}
+      }
+      return result;
+    } catch (_) {
+      return [];
+    }
+  }
+
+  // ─── Team News (RSS aggregator) ───────────────────────────────────────────
+
+  Future<List<Map<String, dynamic>>> getTeamNews(String teamName, {int limit = 15}) async {
+    try {
+      final data = await _get('/news', params: {'team': teamName, 'limit': limit});
+      final list = (data['response'] as List?) ?? [];
+      return list
+          .whereType<Map>()
+          .map((e) => Map<String, dynamic>.from(e))
+          .toList();
+    } catch (_) {
+      return [];
+    }
+  }
+
+  // ─── General News (no team filter) ───────────────────────────────────────
+
+  Future<List<Map<String, dynamic>>> getGeneralNews({int limit = 20}) async {
+    try {
+      final data = await _get('/news', params: {'limit': limit});
+      final list = (data['response'] as List?) ?? [];
+      return list
+          .whereType<Map>()
+          .map((e) => Map<String, dynamic>.from(e))
+          .toList();
+    } catch (_) {
+      return [];
+    }
+  }
+
+  // ─── Team Highlights (YouTube) ────────────────────────────────────────────
+
+  Future<List<Map<String, dynamic>>> getTeamHighlights(String teamName, {int limit = 6}) async {
+    try {
+      final data = await _get('/highlights', params: {'team': teamName, 'limit': limit});
+      final list = (data['response'] as List?) ?? [];
+      return list
+          .whereType<Map>()
+          .map((e) => Map<String, dynamic>.from(e))
+          .toList();
+    } catch (_) {
+      return [];
+    }
+  }
 }

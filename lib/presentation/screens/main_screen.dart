@@ -4,7 +4,7 @@ import '../../core/constants/app_colors.dart';
 import 'home/home_screen.dart';
 import 'fixtures/fixtures_screen.dart';
 import 'leagues/leagues_screen.dart';
-import 'live_tv/live_tv_screen.dart';
+import 'favourites/favourites_screen.dart';
 import 'more/more_screen.dart';
 
 final bottomNavIndexProvider = StateProvider<int>((ref) => 0);
@@ -20,7 +20,7 @@ class MainScreen extends ConsumerWidget {
       const HomeScreen(),
       const FixturesScreen(),
       const LeaguesScreen(),
-      const LiveTvScreen(),
+      const FavouritesScreen(),
       const MoreScreen(),
     ];
 
@@ -41,7 +41,7 @@ class MainScreen extends ConsumerWidget {
           BottomNavigationBarItem(icon: Icon(Icons.sports_soccer), label: 'Scores'),
           BottomNavigationBarItem(icon: Icon(Icons.calendar_today), label: 'Fixtures'),
           BottomNavigationBarItem(icon: Icon(Icons.emoji_events), label: 'Leagues'),
-          BottomNavigationBarItem(icon: Icon(Icons.live_tv), label: 'Live TV'),
+          BottomNavigationBarItem(icon: Icon(Icons.favorite), label: 'My Teams'),
           BottomNavigationBarItem(icon: Icon(Icons.menu), label: 'More'),
         ],
       ),
