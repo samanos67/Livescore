@@ -50,7 +50,23 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('LiveScore'),
+        title: Row(
+          children: [
+            ClipRRect(
+              borderRadius: BorderRadius.circular(8),
+              child: Image.asset(
+                'assets/images/app_logo.png',
+                width: 30,
+                height: 30,
+              ),
+            ),
+            const SizedBox(width: 10),
+            const Text(
+              'LiveScore',
+              style: TextStyle(fontWeight: FontWeight.bold, letterSpacing: 0.5),
+            ),
+          ],
+        ),
         actions: [
           IconButton(
             icon: const Icon(Icons.refresh),
@@ -215,21 +231,31 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
       data: (fixtures) {
         if (fixtures.isEmpty) {
           return Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                const Icon(Icons.sports_soccer, size: 64, color: Colors.grey),
-                const SizedBox(height: 16),
-                const Text(
-                  'No live matches at the moment',
-                  style: TextStyle(color: Colors.grey, fontSize: 16),
-                ),
-                const SizedBox(height: 12),
-                ElevatedButton(
-                  onPressed: () => setState(() => _showLiveOnly = false),
-                  child: const Text('View All Matches'),
-                ),
-              ],
+            child: SingleChildScrollView(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(20),
+                    child: Image.asset(
+                      'assets/images/no_matches.png',
+                      width: 140,
+                      height: 140,
+                      fit: BoxFit.cover,
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  const Text(
+                    'No live matches at the moment',
+                    style: TextStyle(color: Colors.white70, fontSize: 16, fontWeight: FontWeight.bold),
+                  ),
+                  const SizedBox(height: 12),
+                  ElevatedButton(
+                    onPressed: () => setState(() => _showLiveOnly = false),
+                    child: const Text('View All Matches'),
+                  ),
+                ],
+              ),
             ),
           );
         }
@@ -271,21 +297,31 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
 
         if (fixtures.isEmpty && liveMatches.isEmpty) {
           return Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                const Icon(Icons.event_busy, size: 64, color: Colors.grey),
-                const SizedBox(height: 16),
-                Text(
-                  'No matches scheduled for ${DateFormat('MMM d').format(_selectedDate)}',
-                  style: const TextStyle(color: Colors.grey),
-                ),
-                const SizedBox(height: 12),
-                ElevatedButton(
-                  onPressed: _refresh,
-                  child: const Text('Refresh'),
-                ),
-              ],
+            child: SingleChildScrollView(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(20),
+                    child: Image.asset(
+                      'assets/images/no_matches.png',
+                      width: 140,
+                      height: 140,
+                      fit: BoxFit.cover,
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  Text(
+                    'No matches scheduled for ${DateFormat('MMM d').format(_selectedDate)}',
+                    style: const TextStyle(color: Colors.white70, fontSize: 15, fontWeight: FontWeight.w600),
+                  ),
+                  const SizedBox(height: 12),
+                  ElevatedButton(
+                    onPressed: _refresh,
+                    child: const Text('Refresh'),
+                  ),
+                ],
+              ),
             ),
           );
         }

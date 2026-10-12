@@ -65,7 +65,20 @@ class _FixturesScreenState extends ConsumerState<FixturesScreen>
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Fixtures'),
+        title: Row(
+          children: [
+            ClipRRect(
+              borderRadius: BorderRadius.circular(8),
+              child: Image.asset(
+                'assets/images/app_logo.png',
+                width: 28,
+                height: 28,
+              ),
+            ),
+            const SizedBox(width: 10),
+            const Text('Fixtures', style: TextStyle(fontWeight: FontWeight.bold)),
+          ],
+        ),
         actions: [
           IconButton(
             icon: const Icon(Icons.calendar_today),
@@ -88,16 +101,26 @@ class _FixturesScreenState extends ConsumerState<FixturesScreen>
               data: (fixtures) {
                 if (fixtures.isEmpty) {
                   return Center(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        const Icon(Icons.event_busy, size: 64, color: Colors.grey),
-                        const SizedBox(height: 16),
-                        Text(
-                          'No fixtures for ${DateFormat('MMM d, yyyy').format(_selectedDate)}',
-                          style: const TextStyle(color: Colors.grey),
-                        ),
-                      ],
+                    child: SingleChildScrollView(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          ClipRRect(
+                            borderRadius: BorderRadius.circular(20),
+                            child: Image.asset(
+                              'assets/images/no_matches.png',
+                              width: 140,
+                              height: 140,
+                              fit: BoxFit.cover,
+                            ),
+                          ),
+                          const SizedBox(height: 16),
+                          Text(
+                            'No fixtures scheduled for ${DateFormat('MMM d, yyyy').format(_selectedDate)}',
+                            style: const TextStyle(color: Colors.white70, fontSize: 15, fontWeight: FontWeight.w600),
+                          ),
+                        ],
+                      ),
                     ),
                   );
                 }

@@ -17,7 +17,22 @@ class LeaguesScreen extends StatelessWidget {
     ];
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Leagues')),
+      appBar: AppBar(
+        title: Row(
+          children: [
+            ClipRRect(
+              borderRadius: BorderRadius.circular(8),
+              child: Image.asset(
+                'assets/images/app_logo.png',
+                width: 28,
+                height: 28,
+              ),
+            ),
+            const SizedBox(width: 10),
+            const Text('Leagues', style: TextStyle(fontWeight: FontWeight.bold)),
+          ],
+        ),
+      ),
       body: ListView.builder(
         itemCount: leagues.length,
         itemBuilder: (context, index) {

@@ -89,7 +89,20 @@ class _LiveTvScreenState extends ConsumerState<LiveTvScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Live TV & Match Streams'),
+        title: Row(
+          children: [
+            ClipRRect(
+              borderRadius: BorderRadius.circular(8),
+              child: Image.asset(
+                'assets/images/app_logo.png',
+                width: 28,
+                height: 28,
+              ),
+            ),
+            const SizedBox(width: 10),
+            const Text('Live TV & Streams', style: TextStyle(fontWeight: FontWeight.bold)),
+          ],
+        ),
         actions: [
           IconButton(
             icon: const Icon(Icons.add),
@@ -116,18 +129,28 @@ class _LiveTvScreenState extends ConsumerState<LiveTvScreen> {
         data: (streams) {
           if (streams.isEmpty) {
             return Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const Icon(Icons.tv_off, size: 64, color: Colors.grey),
-                  const SizedBox(height: 16),
-                  const Text('No live streams found currently.'),
-                  const SizedBox(height: 12),
-                  ElevatedButton(
-                    onPressed: () => _showAddStreamDialog(context),
-                    child: const Text('Add Stream Link'),
-                  ),
-                ],
+              child: SingleChildScrollView(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(20),
+                      child: Image.asset(
+                        'assets/images/telegram_banner.png',
+                        width: 220,
+                        height: 124,
+                        fit: BoxFit.cover,
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    const Text('No live streams found currently.', style: TextStyle(color: Colors.white70, fontSize: 15, fontWeight: FontWeight.w600)),
+                    const SizedBox(height: 12),
+                    ElevatedButton(
+                      onPressed: () => _showAddStreamDialog(context),
+                      child: const Text('Add Stream Link'),
+                    ),
+                  ],
+                ),
               ),
             );
           }

@@ -22,9 +22,66 @@ class MoreScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('More')),
+      appBar: AppBar(
+        title: Row(
+          children: [
+            ClipRRect(
+              borderRadius: BorderRadius.circular(8),
+              child: Image.asset(
+                'assets/images/app_logo.png',
+                width: 28,
+                height: 28,
+              ),
+            ),
+            const SizedBox(width: 10),
+            const Text('More', style: TextStyle(fontWeight: FontWeight.bold)),
+          ],
+        ),
+      ),
       body: ListView(
         children: [
+          // ── App Brand Card ───────────────────────────────────────────────
+          Container(
+            padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 16),
+            alignment: Alignment.center,
+            child: Column(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(4),
+                  decoration: BoxDecoration(
+                    color: AppColors.secondary,
+                    shape: BoxShape.circle,
+                    boxShadow: [
+                      BoxShadow(
+                        color: AppColors.primary.withOpacity(0.3),
+                        blurRadius: 16,
+                        spreadRadius: 2,
+                      ),
+                    ],
+                  ),
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(40),
+                    child: Image.asset(
+                      'assets/images/app_logo.png',
+                      width: 76,
+                      height: 76,
+                      fit: BoxFit.cover,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                const Text(
+                  'LiveScore Pro',
+                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, letterSpacing: 0.5),
+                ),
+                const SizedBox(height: 4),
+                const Text(
+                  'v1.0.0 · Real-time Scores, News & Streams',
+                  style: TextStyle(color: Colors.grey, fontSize: 12),
+                ),
+              ],
+            ),
+          ),
           _buildSectionHeader('Watch'),
           ListTile(
             leading: const Icon(Icons.live_tv, color: AppColors.primary),
@@ -80,7 +137,10 @@ class MoreScreen extends StatelessWidget {
                 context: context,
                 applicationName: 'LiveScore',
                 applicationVersion: '1.0.0',
-                applicationIcon: const Icon(Icons.sports_soccer, size: 48, color: AppColors.primary),
+                applicationIcon: ClipRRect(
+                  borderRadius: BorderRadius.circular(12),
+                  child: Image.asset('assets/images/app_logo.png', width: 48, height: 48),
+                ),
                 children: [
                   const Text('Your ultimate football companion for live scores, fixtures, and highlights.'),
                 ],

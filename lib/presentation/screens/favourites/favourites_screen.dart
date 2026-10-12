@@ -44,7 +44,20 @@ class FavouritesScreen extends ConsumerWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('My Teams'),
+        title: Row(
+          children: [
+            ClipRRect(
+              borderRadius: BorderRadius.circular(8),
+              child: Image.asset(
+                'assets/images/app_logo.png',
+                width: 28,
+                height: 28,
+              ),
+            ),
+            const SizedBox(width: 10),
+            const Text('My Teams', style: TextStyle(fontWeight: FontWeight.bold)),
+          ],
+        ),
         actions: [
           IconButton(
             icon: const Icon(Icons.refresh),
@@ -125,23 +138,36 @@ class _EmptyState extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(Icons.favorite_border, size: 80, color: Colors.grey),
-          SizedBox(height: 16),
-          Text(
-            'No favourite teams yet',
-            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-          ),
-          SizedBox(height: 8),
-          Text(
-            'Tap the ♡ on any team page to follow them here.',
-            textAlign: TextAlign.center,
-            style: TextStyle(color: Colors.grey),
-          ),
-        ],
+    return Center(
+      child: SingleChildScrollView(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            ClipRRect(
+              borderRadius: BorderRadius.circular(24),
+              child: Image.asset(
+                'assets/images/no_favorites.png',
+                width: 160,
+                height: 160,
+                fit: BoxFit.cover,
+              ),
+            ),
+            const SizedBox(height: 20),
+            const Text(
+              'No favourite teams yet',
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 8),
+            const Padding(
+              padding: EdgeInsets.symmetric(horizontal: 32),
+              child: Text(
+                'Tap the ♡ on any team page to follow them here and get instant match updates.',
+                textAlign: TextAlign.center,
+                style: TextStyle(color: Colors.grey, fontSize: 13),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -214,51 +240,81 @@ class _TelegramCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Card(
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       clipBehavior: Clip.hardEdge,
-      child: Container(
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            colors: [Color(0xFF0088CC), Color(0xFF005f8a)],
-          ),
-        ),
-        child: InkWell(
-          onTap: () => launchUrl(Uri.parse(_telegramUrl), mode: LaunchMode.externalApplication),
-          child: Padding(
-            padding: const EdgeInsets.all(16),
-            child: Row(
-              children: [
-                Container(
-                  width: 52,
-                  height: 52,
-                  decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.2),
-                    shape: BoxShape.circle,
-                  ),
-                  child: const Icon(Icons.telegram, color: Colors.white, size: 32),
-                ),
-                const SizedBox(width: 14),
-                const Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        '📡 Watch Live Matches',
-                        style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 15),
-                      ),
-                      SizedBox(height: 4),
-                      Text(
-                        'Join our Telegram channel for live stream links posted before every match.',
-                        style: TextStyle(color: Colors.white70, fontSize: 12),
-                      ),
-                    ],
-                  ),
-                ),
-                const Icon(Icons.chevron_right, color: Colors.white70),
-              ],
+      child: Stack(
+        children: [
+          Positioned.fill(
+            child: Image.asset(
+              'assets/images/telegram_banner.png',
+              fit: BoxFit.cover,
             ),
           ),
-        ),
+          Positioned.fill(
+            child: Container(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.centerLeft,
+                  end: Alignment.centerRight,
+                  colors: [
+                    Colors.black.withOpacity(0.88),
+                    Colors.black.withOpacity(0.55),
+                  ],
+                ),
+              ),
+            ),
+          ),
+          InkWell(
+            onTap: () => launchUrl(Uri.parse(_telegramUrl), mode: LaunchMode.externalApplication),
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Row(
+                children: [
+                  Container(
+                    width: 52,
+                    height: 52,
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF0088CC).withOpacity(0.85),
+                      shape: BoxShape.circle,
+                      boxShadow: [
+                        BoxShadow(
+                          color: const Color(0xFF0088CC).withOpacity(0.5),
+                          blurRadius: 10,
+                          spreadRadius: 2,
+                        ),
+                      ],
+                    ),
+                    child: const Icon(Icons.telegram, color: Colors.white, size: 32),
+                  ),
+                  const SizedBox(width: 14),
+                  const Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Text(
+                              'Watch Live Matches',
+                              style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 15),
+                            ),
+                            SizedBox(width: 6),
+                            Icon(Icons.sensors, color: AppColors.primary, size: 16),
+                          ],
+                        ),
+                        SizedBox(height: 4),
+                        Text(
+                          'Join our Telegram channel for live stream links posted before every match.',
+                          style: TextStyle(color: Colors.white70, fontSize: 12),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const Icon(Icons.chevron_right, color: Colors.white70),
+                ],
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
