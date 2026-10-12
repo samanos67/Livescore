@@ -44,8 +44,8 @@ class TeamOverviewTab extends ConsumerWidget {
         teamFixAsync.when(
           data: (fixtures) {
             final upcoming = fixtures.where((f) =>
-              f.fixture.status.short == 'NS' &&
-              f.fixture.date.isAfter(DateTime.now())
+              f.statusShort == 'NS' &&
+              f.date.isAfter(DateTime.now())
             ).toList();
             if (upcoming.isEmpty) return const SizedBox.shrink();
             final next = upcoming.first;
@@ -66,7 +66,7 @@ class TeamOverviewTab extends ConsumerWidget {
         teamFixAsync.when(
           data: (fixtures) {
             final finished = fixtures.where((f) =>
-              f.fixture.status.short == 'FT'
+              f.isFinished
             ).toList();
             if (finished.isEmpty) return const SizedBox.shrink();
             final last5   = finished.reversed.take(5).toList().reversed.toList();
@@ -259,7 +259,7 @@ class _NextFixtureCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final dateStr = DateFormat('EEE d MMM · HH:mm').format(fixture.fixture.date.toLocal());
+    final dateStr = DateFormat('EEE d MMM · HH:mm').format(fixture.date.toLocal());
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(14),
@@ -274,9 +274,9 @@ class _NextFixtureCard extends StatelessWidget {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
               children: [
-                _TeamPill(name: fixture.teams.home.name, logo: fixture.teams.home.logo),
+                _TeamPill(name: fixture.homeTeam.name, logo: fixture.homeTeam.logoUrl),
                 const Text('VS', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-                _TeamPill(name: fixture.teams.away.name, logo: fixture.teams.away.logo),
+                _TeamPill(name: fixture.awayTeam.name, logo: fixture.awayTeam.logoUrl),
               ],
             ),
           ],
@@ -331,9 +331,9 @@ class _FormRow extends StatelessWidget {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceEvenly,
       children: fixtures.map((f) {
-        final isHome   = f.teams.home.id == teamId;
-        final homeGoals = f.goals.home ?? 0;
-        final awayGoals = f.goals.away ?? 0;
+        final isHome   = f.homeTeam.id == teamId;
+        final homeGoals = f.goalsHome ?? 0;
+        final awayGoals = f.goalsAway ?? 0;
         String result;
         Color color;
         if (isHome) {
@@ -346,9 +346,7 @@ class _FormRow extends StatelessWidget {
           else                             { result = 'L'; color = Colors.red; }
         }
         return Tooltip(
-          message: isHome
-              ? '${f.teams.home.name} ${homeGoals}-${awayGoals} ${f.teams.away.name}'
-              : '${f.teams.home.name} ${homeGoals}-${awayGoals} ${f.teams.away.name}',
+          message: '${f.homeTeam.name} $homeGoals-$awayGoals ${f.awayTeam.name}',
           child: Container(
             width: 44,
             height: 44,

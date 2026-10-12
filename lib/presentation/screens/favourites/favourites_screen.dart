@@ -5,10 +5,8 @@ import 'package:url_launcher/url_launcher.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../data/datasources/local/favorites_service.dart';
 import '../../providers/team_provider.dart';
-import '../../providers/fixture_provider.dart';
 import '../../widgets/match_card.dart';
 import '../team_detail/team_detail_screen.dart';
-import '../../../domain/entities/fixture.dart';
 import '../../../domain/entities/news_article.dart';
 
 // ─── Favourites Provider ──────────────────────────────────────────────────────
@@ -61,7 +59,7 @@ class FavouritesScreen extends ConsumerWidget {
         ],
       ),
       body: favIds.isEmpty
-          ? _EmptyState()
+          ? const _EmptyState()
           : RefreshIndicator(
               onRefresh: () async {
                 for (final id in favIds) {
@@ -95,7 +93,7 @@ class FavouritesScreen extends ConsumerWidget {
                   const SizedBox(height: 16),
 
                   // ── Telegram Livestream Section ───────────────────────────
-                  _TelegramCard(),
+                  const _TelegramCard(),
                   const SizedBox(height: 16),
 
                   // ── Upcoming Fixtures ─────────────────────────────────────
@@ -110,7 +108,7 @@ class FavouritesScreen extends ConsumerWidget {
 
                   // ── Football News ─────────────────────────────────────────
                   const _SectionTitle('Latest Football News'),
-                  _NewsSection(),
+                  const _NewsSection(),
                   const SizedBox(height: 32),
                 ],
               ),
@@ -123,20 +121,22 @@ class FavouritesScreen extends ConsumerWidget {
 // Empty state when no favourites
 // ─────────────────────────────────────────────────────────────────────────────
 class _EmptyState extends StatelessWidget {
+  const _EmptyState();
+
   @override
   Widget build(BuildContext context) {
-    return Center(
+    return const Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          const Icon(Icons.favorite_border, size: 80, color: Colors.grey),
-          const SizedBox(height: 16),
-          const Text(
+          Icon(Icons.favorite_border, size: 80, color: Colors.grey),
+          SizedBox(height: 16),
+          Text(
             'No favourite teams yet',
             style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
           ),
-          const SizedBox(height: 8),
-          const Text(
+          SizedBox(height: 8),
+          Text(
             'Tap the ♡ on any team page to follow them here.',
             textAlign: TextAlign.center,
             style: TextStyle(color: Colors.grey),
@@ -208,6 +208,7 @@ class _FavTeamChip extends ConsumerWidget {
 // Telegram Livestream Card
 // ─────────────────────────────────────────────────────────────────────────────
 class _TelegramCard extends StatelessWidget {
+  const _TelegramCard();
   static const _telegramUrl = 'https://t.me/your_livescore_channel'; // ← update this
 
   @override
@@ -278,8 +279,8 @@ class _TeamNextFixture extends ConsumerWidget {
       error: (_, __) => const SizedBox.shrink(),
       data: (fixtures) {
         final next = fixtures.where((f) =>
-          f.fixture.status.short == 'NS' &&
-          f.fixture.date.isAfter(DateTime.now())
+          f.statusShort == 'NS' &&
+          f.date.isAfter(DateTime.now())
         ).toList();
         if (next.isEmpty) return const SizedBox.shrink();
         return MatchCard(fixture: next.first);
@@ -303,7 +304,7 @@ class _TeamRecentResults extends ConsumerWidget {
       error: (_, __) => const SizedBox.shrink(),
       data: (fixtures) {
         final finished = fixtures
-            .where((f) => f.fixture.status.short == 'FT')
+            .where((f) => f.isFinished)
             .toList()
             .reversed
             .take(2)
@@ -321,6 +322,8 @@ class _TeamRecentResults extends ConsumerWidget {
 // News section
 // ─────────────────────────────────────────────────────────────────────────────
 class _NewsSection extends ConsumerWidget {
+  const _NewsSection();
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final newsAsync = ref.watch(generalNewsProvider);

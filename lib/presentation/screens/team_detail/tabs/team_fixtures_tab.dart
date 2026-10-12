@@ -48,15 +48,13 @@ class TeamFixturesTab extends ConsumerWidget {
 
         final now      = DateTime.now();
         final upcoming = fixtures.where((f) =>
-          (f.fixture.status.short == 'NS' || f.fixture.status.short == 'TBD') &&
-          f.fixture.date.isAfter(now)
-        ).toList()..sort((a, b) => a.fixture.date.compareTo(b.fixture.date));
+          (f.statusShort == 'NS' || f.statusShort == 'TBD') &&
+          f.date.isAfter(now)
+        ).toList()..sort((a, b) => a.date.compareTo(b.date));
 
         final past = fixtures.where((f) =>
-          f.fixture.status.short == 'FT' ||
-          f.fixture.status.short == 'AET' ||
-          f.fixture.status.short == 'PEN'
-        ).toList()..sort((a, b) => b.fixture.date.compareTo(a.fixture.date));
+          f.isFinished
+        ).toList()..sort((a, b) => b.date.compareTo(a.date));
 
         return ListView(
           padding: const EdgeInsets.all(12),
@@ -100,16 +98,15 @@ class _FixtureRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final f         = fixture.fixture;
-    final home      = fixture.teams.home;
-    final away      = fixture.teams.away;
-    final isLive    = fixture.isLive;
-    final isFinished = f.status.short == 'FT' || f.status.short == 'AET';
-    final homeGoals = fixture.goals.home;
-    final awayGoals = fixture.goals.away;
+    final home       = fixture.homeTeam;
+    final away       = fixture.awayTeam;
+    final isLive     = fixture.isLive;
+    final isFinished = fixture.isFinished;
+    final homeGoals  = fixture.goalsHome;
+    final awayGoals  = fixture.goalsAway;
 
-    final dateStr = DateFormat('EEE d MMM').format(f.date.toLocal());
-    final timeStr = DateFormat('HH:mm').format(f.date.toLocal());
+    final dateStr = DateFormat('EEE d MMM').format(fixture.date.toLocal());
+    final timeStr = DateFormat('HH:mm').format(fixture.date.toLocal());
 
     return Card(
       margin: const EdgeInsets.only(bottom: 8),
@@ -132,7 +129,7 @@ class _FixtureRow extends StatelessWidget {
                 Expanded(
                   child: Row(
                     children: [
-                      _TeamBadge(logo: home.logo),
+                      _TeamBadge(logo: home.logoUrl),
                       const SizedBox(width: 6),
                       Flexible(
                         child: Text(
@@ -154,7 +151,7 @@ class _FixtureRow extends StatelessWidget {
                   alignment: Alignment.center,
                   child: isFinished
                       ? Text(
-                          '$homeGoals - $awayGoals',
+                          '${homeGoals ?? 0} - ${awayGoals ?? 0}',
                           style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
                         )
                       : isLive
@@ -167,13 +164,13 @@ class _FixtureRow extends StatelessWidget {
                                     borderRadius: BorderRadius.circular(4),
                                   ),
                                   child: Text(
-                                    f.status.short,
+                                    fixture.statusShort,
                                     style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold),
                                   ),
                                 ),
                                 const SizedBox(height: 2),
                                 Text(
-                                  '$homeGoals - $awayGoals',
+                                  '${homeGoals ?? 0} - ${awayGoals ?? 0}',
                                   style: const TextStyle(fontWeight: FontWeight.bold),
                                 ),
                               ],
@@ -201,7 +198,7 @@ class _FixtureRow extends StatelessWidget {
                         ),
                       ),
                       const SizedBox(width: 6),
-                      _TeamBadge(logo: away.logo),
+                      _TeamBadge(logo: away.logoUrl),
                     ],
                   ),
                 ),
