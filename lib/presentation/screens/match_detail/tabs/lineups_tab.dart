@@ -67,6 +67,40 @@ class LineupsTab extends ConsumerWidget {
                   ],
                 ),
               ),
+              Container(
+                margin: const EdgeInsets.fromLTRB(16, 10, 16, 4),
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                decoration: BoxDecoration(
+                  color: AppColors.cardBackground,
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: Colors.white12),
+                ),
+                child: Row(
+                  children: [
+                    const Icon(Icons.shield_outlined, color: AppColors.primary, size: 16),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        fixture.statusShort == 'NS'
+                            ? 'Probable Lineup & Squad Roster'
+                            : 'Match Lineup & Formation',
+                        style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.white70),
+                      ),
+                    ),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                      decoration: BoxDecoration(
+                        color: AppColors.primary.withOpacity(0.2),
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                      child: Text(
+                        fixture.statusShort == 'NS' ? 'PROBABLE' : 'CONFIRMED',
+                        style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: AppColors.primary),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
               Expanded(
                 child: TabBarView(
                   children: [

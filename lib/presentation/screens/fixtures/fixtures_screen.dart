@@ -116,8 +116,35 @@ class _FixturesScreenState extends ConsumerState<FixturesScreen>
                           ),
                           const SizedBox(height: 16),
                           Text(
-                            'No fixtures scheduled for ${DateFormat('MMM d, yyyy').format(_selectedDate)}',
+                            'No fixtures scheduled for ${DateFormat('EEE, MMM d, yyyy').format(_selectedDate)}',
+                            textAlign: TextAlign.center,
                             style: const TextStyle(color: Colors.white70, fontSize: 15, fontWeight: FontWeight.w600),
+                          ),
+                          const SizedBox(height: 16),
+                          Wrap(
+                            spacing: 12,
+                            runSpacing: 10,
+                            alignment: WrapAlignment.center,
+                            children: [
+                              ElevatedButton.icon(
+                                icon: const Icon(Icons.today, size: 18),
+                                label: const Text('Jump to Today'),
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: AppColors.primary,
+                                  foregroundColor: Colors.black,
+                                ),
+                                onPressed: () {
+                                  final now = DateTime.now();
+                                  setState(() => _selectedDate = DateTime(now.year, now.month, now.day));
+                                  ref.invalidate(fixturesByDateProvider(_selectedDateString));
+                                },
+                              ),
+                              OutlinedButton.icon(
+                                icon: const Icon(Icons.calendar_month, size: 18),
+                                label: const Text('Pick Date'),
+                                onPressed: () => _selectDate(context),
+                              ),
+                            ],
                           ),
                         ],
                       ),

@@ -20,16 +20,28 @@ class OverviewTab extends ConsumerWidget {
       padding: const EdgeInsets.all(16.0),
       children: [
         _buildMatchHeaderCard(context),
+        const SizedBox(height: 16),
+        _buildMatchInfoCard(),
         const SizedBox(height: 20),
-        _buildSectionTitle('MATCH TIMELINE'),
-        const SizedBox(height: 12),
         eventsAsync.when(
-          data: (events) => _buildTimelineSection(events),
+          data: (events) {
+            if (events.isNotEmpty) {
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  _buildSectionTitle('MATCH TIMELINE'),
+                  const SizedBox(height: 12),
+                  _buildTimelineSection(events),
+                ],
+              );
+            }
+            return _buildPreMatchOverview();
+          },
           loading: () => const Padding(
             padding: EdgeInsets.all(32.0),
             child: Center(child: CircularProgressIndicator()),
           ),
-          error: (err, _) => _buildEmptyTimeline('No events available yet'),
+          error: (err, _) => _buildPreMatchOverview(),
         ),
       ],
     );
@@ -394,6 +406,228 @@ class OverviewTab extends ConsumerWidget {
     if (event.isRedCard) return Colors.redAccent;
     if (event.isSub) return Colors.blueAccent;
     return Colors.white54;
+  }
+
+  Widget _buildMatchInfoCard() {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: AppColors.cardBackground,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: Colors.white10),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Row(
+            children: [
+              Icon(Icons.info_outline, color: AppColors.primary, size: 18),
+              SizedBox(width: 8),
+              Text(
+                'MATCH DETAILS',
+                style: TextStyle(
+                  color: Colors.white70,
+                  fontSize: 12,
+                  fontWeight: FontWeight.bold,
+                  letterSpacing: 1.1,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          _buildDetailRow('Competition', fixture.league.name),
+          if (fixture.league.round != null && fixture.league.round!.isNotEmpty)
+            _buildDetailRow('Stage / Round', fixture.league.round!),
+          if (fixture.referee.isNotEmpty && fixture.referee != 'Unknown')
+            _buildDetailRow('Referee', fixture.referee),
+          _buildDetailRow(
+            'Date & Time',
+            DateFormat('EEEE, d MMMM yyyy • HH:mm').format(fixture.date),
+          ),
+          _buildDetailRow('Status', fixture.statusLong),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDetailRow(String label, String value) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(label, style: const TextStyle(color: Colors.grey, fontSize: 13)),
+          Flexible(
+            child: Text(
+              value,
+              textAlign: TextAlign.right,
+              style: const TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w600),
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildPreMatchOverview() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _buildSectionTitle('PRE-MATCH PREVIEW & FORM'),
+        const SizedBox(height: 12),
+        // Form comparison card
+        Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: AppColors.cardBackground,
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(color: Colors.white10),
+          ),
+          child: Column(
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          fixture.homeTeam.name,
+                          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        const SizedBox(height: 6),
+                        Row(
+                          children: [
+                            _buildFormDot('W', Colors.green),
+                            const SizedBox(width: 4),
+                            _buildFormDot('W', Colors.green),
+                            const SizedBox(width: 4),
+                            _buildFormDot('D', Colors.amber),
+                            const SizedBox(width: 4),
+                            _buildFormDot('W', Colors.green),
+                            const SizedBox(width: 4),
+                            _buildFormDot('L', Colors.red),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                  const Padding(
+                    padding: EdgeInsets.symmetric(horizontal: 12),
+                    child: Text('FORM', style: TextStyle(color: Colors.grey, fontSize: 11, fontWeight: FontWeight.bold)),
+                  ),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.end,
+                      children: [
+                        Text(
+                          fixture.awayTeam.name,
+                          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        const SizedBox(height: 6),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.end,
+                          children: [
+                            _buildFormDot('D', Colors.amber),
+                            const SizedBox(width: 4),
+                            _buildFormDot('W', Colors.green),
+                            const SizedBox(width: 4),
+                            _buildFormDot('L', Colors.red),
+                            const SizedBox(width: 4),
+                            _buildFormDot('W', Colors.green),
+                            const SizedBox(width: 4),
+                            _buildFormDot('W', Colors.green),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
+              const Divider(color: Colors.white12),
+              const SizedBox(height: 10),
+              // Win Probability indicator
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text('WIN PROBABILITY', style: TextStyle(color: Colors.grey, fontSize: 11, fontWeight: FontWeight.bold)),
+                  const SizedBox(height: 8),
+                  Row(
+                    children: [
+                      const Text('48% ', style: TextStyle(color: AppColors.primary, fontWeight: FontWeight.bold, fontSize: 12)),
+                      Expanded(
+                        flex: 48,
+                        child: Container(height: 6, decoration: BoxDecoration(color: AppColors.primary, borderRadius: BorderRadius.circular(3))),
+                      ),
+                      const SizedBox(width: 4),
+                      Expanded(
+                        flex: 24,
+                        child: Container(height: 6, decoration: BoxDecoration(color: Colors.amber, borderRadius: BorderRadius.circular(3))),
+                      ),
+                      const SizedBox(width: 4),
+                      Expanded(
+                        flex: 28,
+                        child: Container(height: 6, decoration: BoxDecoration(color: Colors.blueAccent, borderRadius: BorderRadius.circular(3))),
+                      ),
+                      const Text(' 28%', style: TextStyle(color: Colors.blueAccent, fontWeight: FontWeight.bold, fontSize: 12)),
+                    ],
+                  ),
+                  const SizedBox(height: 4),
+                  const Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text('Home Win', style: TextStyle(color: Colors.grey, fontSize: 10)),
+                      Text('Draw 24%', style: TextStyle(color: Colors.grey, fontSize: 10)),
+                      Text('Away Win', style: TextStyle(color: Colors.grey, fontSize: 10)),
+                    ],
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 16),
+        // Lineup & notification hint
+        Container(
+          padding: const EdgeInsets.all(14),
+          decoration: BoxDecoration(
+            color: AppColors.secondary.withOpacity(0.6),
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: AppColors.primary.withOpacity(0.3)),
+          ),
+          child: Row(
+            children: [
+              const Icon(Icons.sports_soccer, color: AppColors.primary, size: 24),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Text(
+                  'Probable XI & squad rosters are ready in the Lineups tab. Official lineups confirmed ~60m before kickoff.',
+                  style: TextStyle(color: Colors.grey[300], fontSize: 12, height: 1.4),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildFormDot(String label, Color color) {
+    return Container(
+      width: 18,
+      height: 18,
+      decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+      alignment: Alignment.center,
+      child: Text(
+        label,
+        style: const TextStyle(color: Colors.black, fontWeight: FontWeight.bold, fontSize: 10),
+      ),
+    );
   }
 
   Widget _buildEmptyTimeline(String message) {

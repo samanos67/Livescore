@@ -16,8 +16,11 @@ class HomeScreen extends ConsumerStatefulWidget {
 
 class _HomeScreenState extends ConsumerState<HomeScreen>
     with AutomaticKeepAliveClientMixin {
-  int _selectedDateIndex = 3; // Today is at index 3
+  static const int _pastDays = 7;
+  static const int _totalDays = 35; // 5 full weeks of fixtures
+  int _selectedDateIndex = _pastDays; // Today is at index 7
   late final DateTime _baseDate;
+  late final ScrollController _dateScrollController;
   bool _showLiveOnly = false;
 
   @override
@@ -28,15 +31,84 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
     super.initState();
     final now = DateTime.now();
     _baseDate = DateTime(now.year, now.month, now.day);
+    _dateScrollController = ScrollController();
+
+    // Auto-scroll to Today on load
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _scrollToDateIndex(_selectedDateIndex, animate: false);
+    });
   }
 
-  DateTime _getDateForIndex(int index) => _baseDate.add(Duration(days: index - 3));
+  @override
+  void dispose() {
+    _dateScrollController.dispose();
+    super.dispose();
+  }
+
+  void _scrollToDateIndex(int index, {bool animate = true}) {
+    if (!_dateScrollController.hasClients) return;
+    const itemWidth = 66.0;
+    final screenWidth = MediaQuery.of(context).size.width;
+    final targetOffset = (index * itemWidth) - (screenWidth / 2) + (itemWidth / 2);
+    final clamped = targetOffset.clamp(0.0, _dateScrollController.position.maxScrollExtent);
+    if (animate) {
+      _dateScrollController.animateTo(
+        clamped,
+        duration: const Duration(milliseconds: 300),
+        curve: Curves.easeInOut,
+      );
+    } else {
+      _dateScrollController.jumpTo(clamped);
+    }
+  }
+
+  DateTime _getDateForIndex(int index) => _baseDate.add(Duration(days: index - _pastDays));
   DateTime get _selectedDate => _getDateForIndex(_selectedDateIndex);
   String get _selectedDateString => DateFormat('yyyy-MM-dd').format(_selectedDate);
+  bool get _isTodaySelected => _selectedDateIndex == _pastDays;
 
   void _refresh() {
     ref.read(liveFixturesProvider.notifier).fetchLiveFixtures();
     ref.invalidate(fixturesByDateProvider(_selectedDateString));
+  }
+
+  Future<void> _pickDate(BuildContext context) async {
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: _selectedDate,
+      firstDate: DateTime(2023),
+      lastDate: DateTime(2030),
+      builder: (context, child) {
+        return Theme(
+          data: Theme.of(context).copyWith(
+            colorScheme: const ColorScheme.dark(
+              primary: AppColors.primary,
+              onPrimary: Colors.black,
+              surface: AppColors.secondary,
+              onSurface: Colors.white,
+            ),
+          ),
+          child: child!,
+        );
+      },
+    );
+
+    if (picked != null) {
+      final pickedDate = DateTime(picked.year, picked.month, picked.day);
+      final diff = pickedDate.difference(_baseDate).inDays;
+      final targetIndex = diff + _pastDays;
+
+      if (targetIndex >= 0 && targetIndex < _totalDays) {
+        setState(() => _selectedDateIndex = targetIndex);
+        _scrollToDateIndex(targetIndex);
+      } else {
+        // Jump outside default carousel range
+        setState(() {
+          _selectedDateIndex = -1; // custom
+        });
+      }
+      ref.invalidate(fixturesByDateProvider(DateFormat('yyyy-MM-dd').format(pickedDate)));
+    }
   }
 
   @override
@@ -69,7 +141,13 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
         ),
         actions: [
           IconButton(
+            icon: const Icon(Icons.calendar_month),
+            tooltip: 'Choose Date',
+            onPressed: () => _pickDate(context),
+          ),
+          IconButton(
             icon: const Icon(Icons.refresh),
+            tooltip: 'Refresh',
             onPressed: _refresh,
           ),
         ],
@@ -174,47 +252,58 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
 
   Widget _buildDateSelector() {
     return Container(
-      height: 60,
+      height: 64,
       color: AppColors.secondary,
       child: ListView.builder(
+        controller: _dateScrollController,
         scrollDirection: Axis.horizontal,
-        itemCount: 10,
+        itemCount: _totalDays,
         itemBuilder: (context, index) {
           final date = _getDateForIndex(index);
           final isSelected = index == _selectedDateIndex;
+          final isToday = index == _pastDays;
 
           return GestureDetector(
             onTap: () {
               setState(() {
                 _selectedDateIndex = index;
               });
+              _scrollToDateIndex(index);
             },
             child: Container(
-              width: 60,
-              margin: const EdgeInsets.symmetric(horizontal: 4, vertical: 8),
+              width: 58,
+              margin: const EdgeInsets.symmetric(horizontal: 4, vertical: 6),
               decoration: BoxDecoration(
                 color: isSelected ? AppColors.primary : Colors.transparent,
                 borderRadius: BorderRadius.circular(8),
                 border: Border.all(
-                  color: isSelected ? AppColors.primary : Colors.grey.withOpacity(0.3),
-                  width: 1,
+                  color: isSelected
+                      ? AppColors.primary
+                      : (isToday ? AppColors.primary.withOpacity(0.6) : Colors.grey.withOpacity(0.2)),
+                  width: isToday && !isSelected ? 1.5 : 1,
                 ),
               ),
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   Text(
-                    DateFormat('E').format(date),
+                    isToday ? 'TODAY' : DateFormat('E').format(date).toUpperCase(),
                     style: TextStyle(
-                      color: isSelected ? Colors.black : Colors.white,
-                      fontSize: 12,
+                      color: isSelected
+                          ? Colors.black
+                          : (isToday ? AppColors.primary : Colors.grey[400]),
+                      fontSize: isToday ? 9 : 11,
+                      fontWeight: FontWeight.bold,
+                      letterSpacing: isToday ? 0.5 : 0,
                     ),
                   ),
+                  const SizedBox(height: 2),
                   Text(
                     DateFormat('d').format(date),
                     style: TextStyle(
                       color: isSelected ? Colors.black : Colors.white,
                       fontWeight: FontWeight.bold,
+                      fontSize: 15,
                     ),
                   ),
                 ],
@@ -292,12 +381,13 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
   ) {
     return fixturesAsync.when(
       data: (fixtures) {
-        final isToday = _selectedDateIndex == 3;
+        final isToday = _isTodaySelected;
         final liveMatches = isToday ? (liveAsync.value ?? []) : <Fixture>[];
 
         if (fixtures.isEmpty && liveMatches.isEmpty) {
           return Center(
             child: SingleChildScrollView(
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
@@ -312,13 +402,40 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                   ),
                   const SizedBox(height: 16),
                   Text(
-                    'No matches scheduled for ${DateFormat('MMM d').format(_selectedDate)}',
+                    'No matches scheduled for ${DateFormat('EEE, MMM d').format(_selectedDate)}',
+                    textAlign: TextAlign.center,
                     style: const TextStyle(color: Colors.white70, fontSize: 15, fontWeight: FontWeight.w600),
                   ),
-                  const SizedBox(height: 12),
-                  ElevatedButton(
-                    onPressed: _refresh,
-                    child: const Text('Refresh'),
+                  const SizedBox(height: 16),
+                  Wrap(
+                    spacing: 12,
+                    runSpacing: 10,
+                    alignment: WrapAlignment.center,
+                    children: [
+                      if (!isToday)
+                        ElevatedButton.icon(
+                          icon: const Icon(Icons.today, size: 18),
+                          label: const Text('Jump to Today'),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: AppColors.primary,
+                            foregroundColor: Colors.black,
+                          ),
+                          onPressed: () {
+                            setState(() => _selectedDateIndex = _pastDays);
+                            _scrollToDateIndex(_pastDays);
+                          },
+                        ),
+                      OutlinedButton.icon(
+                        icon: const Icon(Icons.calendar_month, size: 18),
+                        label: const Text('Pick Date'),
+                        onPressed: () => _pickDate(context),
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.refresh),
+                        tooltip: 'Refresh',
+                        onPressed: _refresh,
+                      ),
+                    ],
                   ),
                 ],
               ),
