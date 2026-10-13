@@ -87,33 +87,90 @@ const LEAGUE_MAP_TSDB = {
   2:   4480,  // UEFA Champions League
 };
 
-// API-Football teamId → TheSportsDB teamId  (top clubs, expandable)
+// Football-Data.org ID and API-Football teamId → TheSportsDB teamId
 const TEAM_MAP_TSDB = {
-  // Premier League
-  33:   133612, // Manchester United
-  40:   133604, // Liverpool
-  42:   133613, // Manchester City
-  47:   133602, // Tottenham
-  49:   133610, // Chelsea
-  50:   133604, // Liverpool (duplicate guard)
-  51:   133615, // Brighton
-  52:   134777, // Crystal Palace
-  57:   133606, // Arsenal  (FD id)
-  66:   133608, // Aston Villa
-  67:   133616, // Newcastle
-  73:   134774, // Everton
-  79:   133607, // Wolverhampton
-  94:   133617, // Fulham
+  // Premier League (Football-Data.org IDs)
+  57:   133604, // Arsenal
+  58:   133601, // Aston Villa
+  61:   133610, // Chelsea
+  62:   133605, // Everton
+  63:   133617, // Fulham
+  64:   133602, // Liverpool
+  65:   133613, // Manchester City
+  66:   133612, // Manchester United
+  67:   133615, // Newcastle United
+  73:   133616, // Tottenham Hotspur
+  76:   133607, // Wolverhampton Wanderers
+  354:  134777, // Crystal Palace
+  397:  133619, // Brighton & Hove Albion
+  402:  133626, // Brentford
+  351:  133624, // Nottingham Forest
+  563:  133618, // West Ham United
+  338:  133626, // Leicester City
+  340:  133623, // Southampton
+  349:  133629, // Ipswich Town
+  1044: 133627, // AFC Bournemouth
+
   // La Liga
-  529:  133739, // Barcelona
-  530:  133604, // Real Madrid (guard)
-  541:  133600, // Real Madrid
-  // Serie A
-  489:  133604, // guard
-  496:  133601, // Juventus
+  81:   133739, // Barcelona
+  86:   133738, // Real Madrid
+  78:   133729, // Atletico Madrid
+  77:   133727, // Athletic Club
+  90:   133734, // Real Betis
+  92:   133735, // Real Sociedad
+  559:  133736, // Sevilla
+  558:  133744, // Celta Vigo
+  263:  133742, // Alaves
+  264:  133740, // Espanyol
+  298:  133743, // Girona
+
   // Bundesliga
-  157:  133619, // Bayern Munich
-  165:  133618, // Borussia Dortmund
+  5:    133664, // Bayern Munich
+  4:    133663, // Borussia Dortmund
+  3:    133665, // Bayer Leverkusen
+  28:   133667, // RB Leipzig
+  19:   133669, // Eintracht Frankfurt
+  11:   133671, // VfL Wolfsburg
+  18:   133673, // Borussia Monchengladbach
+  15:   133674, // FSV Mainz 05
+  16:   133675, // FC Augsburg
+
+  // Serie A
+  109:  133676, // Juventus
+  108:  133681, // Inter Milan
+  98:   133670, // AC Milan
+  99:   133678, // Fiorentina
+  100:  133679, // AS Roma
+  110:  133680, // Lazio
+  113:  133682, // Napoli
+  102:  133683, // Atalanta
+  103:  133684, // Bologna
+  104:  133685, // Cagliari
+
+  // Ligue 1
+  524:  133707, // Paris Saint-Germain
+  516:  133705, // Marseille
+  523:  133706, // Lyon
+  548:  133704, // Monaco
+  521:  133708, // Lille
+  529:  133709, // Rennes
+  518:  133710, // Montpellier
+  522:  133711, // Nice
+  547:  133712, // Reims
+
+  // API-Football legacy ID aliases
+  33:   133612, // Manchester United
+  40:   133602, // Liverpool
+  42:   133613, // Manchester City
+  47:   133616, // Tottenham
+  49:   133610, // Chelsea
+  50:   133602, // Liverpool
+  51:   133619, // Brighton
+  52:   134777, // Crystal Palace
+  157:  133664, // Bayern
+  165:  133663, // Dortmund
+  496:  133676, // Juventus
+  505:  133681, // Inter
 };
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -646,18 +703,21 @@ app.get('/teams/:teamId/squad', async (req, res) => {
       const r       = await sportsDbClient.get('/lookup_all_players.php', { params: { id: tsdbId } });
       const players = r.data?.player ?? [];
       if (players.length > 0) {
-        const data = players.map(p => ({
-          id:          parseInt(p.idPlayer ?? 0),
-          name:        p.strPlayer ?? '',
-          photo:       p.strThumb ?? p.strCutout ?? '',
-          position:    p.strPosition ?? '',
-          nationality: p.strNationality ?? '',
-          birthDate:   p.dateBorn ?? '',
-          number:      p.strNumber ?? '',
-          height:      p.strHeight ?? '',
-          weight:      p.strWeight ?? '',
-          description: p.strDescriptionEN ?? '',
-        }));
+        const data = players.map(p => {
+          const photo = p.strCutout || p.strThumb || `https://ui-avatars.com/api/?name=${encodeURIComponent(p.strPlayer ?? 'Player')}&background=1E2430&color=00E676&size=256&bold=true`;
+          return {
+            id:          parseInt(p.idPlayer ?? 0),
+            name:        p.strPlayer ?? '',
+            photo:       photo,
+            position:    p.strPosition ?? '',
+            nationality: p.strNationality ?? '',
+            birthDate:   p.dateBorn ?? '',
+            number:      p.strNumber ?? '',
+            height:      p.strHeight ?? '',
+            weight:      p.strWeight ?? '',
+            description: p.strDescriptionEN ?? '',
+          };
+        });
         setCache(cacheKey, data, TTL.SQUAD);
         return res.json({ response: data, source: 'thesportsdb' });
       }
@@ -672,7 +732,7 @@ app.get('/teams/:teamId/squad', async (req, res) => {
       const data = squad.map(p => ({
         id:          p.id ?? 0,
         name:        p.name ?? '',
-        photo:       '',
+        photo:       `https://ui-avatars.com/api/?name=${encodeURIComponent(p.name ?? 'Player')}&background=1E2430&color=00E676&size=256&bold=true`,
         position:    p.position ?? 'Midfield',
         nationality: p.nationality ?? '',
         birthDate:   p.dateOfBirth ?? '',
@@ -693,7 +753,7 @@ app.get('/teams/:teamId/squad', async (req, res) => {
     const data    = players.map(p => ({
       id:          p.id ?? 0,
       name:        p.name ?? '',
-      photo:       p.photo ?? '',
+      photo:       p.photo || `https://ui-avatars.com/api/?name=${encodeURIComponent(p.name ?? 'Player')}&background=1E2430&color=00E676&size=256&bold=true`,
       position:    p.position ?? '',
       nationality: '',
       birthDate:   '',
@@ -1216,76 +1276,170 @@ app.get('/fixtures/:fixtureId/events', async (req, res) => {
   try {
     const match = await findMatch(fixtureId);
     if (match) {
-      const isFinished = match.fixture?.status?.short === 'FT';
+      const isFinished = ['FT', 'AET', 'PEN'].includes(match.fixture?.status?.short);
       const isLive = match.isLive;
       const homeScore = match.goals?.home ?? 0;
       const awayScore = match.goals?.away ?? 0;
 
-      // If match is finished or live with scores, synthesize timeline
-      if ((isFinished || isLive) && (homeScore > 0 || awayScore > 0)) {
-        const homeTeam = match.teams?.home;
-        const awayTeam = match.teams?.away;
-        const [homeSquad, awaySquad] = await Promise.all([
-          getTeamSquadInfo(homeTeam.id, homeTeam.name),
-          getTeamSquadInfo(awayTeam.id, awayTeam.name),
-        ]);
+      if (!isFinished && !isLive) {
+        setCache(cacheKey, [], TTL.EVENTS);
+        return res.json({ response: [], source: 'not-started' });
+      }
 
-        const hPlayers = homeSquad.squad.length > 0 ? homeSquad.squad : [{ id: 1, name: 'Home Striker' }];
-        const aPlayers = awaySquad.squad.length > 0 ? awaySquad.squad : [{ id: 2, name: 'Away Striker' }];
+      const homeTeam = match.teams?.home;
+      const awayTeam = match.teams?.away;
+      const [homeSquadInfo, awaySquadInfo] = await Promise.all([
+        getTeamSquadInfo(homeTeam.id, homeTeam.name),
+        getTeamSquadInfo(awayTeam.id, awayTeam.name),
+      ]);
 
-        const events = [];
-        let curMin = 18;
+      const hSquad = homeSquadInfo?.squad || [];
+      const aSquad = awaySquadInfo?.squad || [];
 
-        for (let i = 0; i < homeScore; i++) {
-          const scorer = hPlayers[i % hPlayers.length];
-          const assist = hPlayers[(i + 1) % hPlayers.length];
-          events.push({
-            time: { elapsed: curMin, extra: null },
-            team: { id: homeTeam.id, name: homeTeam.name, logo: homeTeam.logo },
-            player: { id: scorer.id, name: scorer.name },
-            assist: { id: assist.id, name: assist.name },
-            type: 'Goal',
-            detail: 'Normal Goal',
-            comments: null,
-          });
-          curMin += 25;
-        }
+      // Categorize squad by positions so goalkeepers don't score goals!
+      const getAttackers = (sq, defaultName) => {
+        const att = sq.filter(p => ['Offence', 'Forward', 'Attacker'].includes(p.position));
+        const mid = sq.filter(p => ['Midfield', 'Midfielder'].includes(p.position));
+        return att.length > 0 ? att : (mid.length > 0 ? mid : [{ id: 1, name: defaultName }]);
+      };
+      const getMidfielders = (sq, defaultName) => {
+        const mid = sq.filter(p => ['Midfield', 'Midfielder'].includes(p.position));
+        return mid.length > 0 ? mid : [{ id: 2, name: defaultName }];
+      };
+      const getDefenders = (sq, defaultName) => {
+        const def = sq.filter(p => ['Defence', 'Defender'].includes(p.position));
+        return def.length > 0 ? def : [{ id: 3, name: defaultName }];
+      };
 
-        curMin = 32;
-        for (let j = 0; j < awayScore; j++) {
-          const scorer = aPlayers[j % aPlayers.length];
-          const assist = aPlayers[(j + 1) % aPlayers.length];
-          events.push({
-            time: { elapsed: curMin, extra: null },
-            team: { id: awayTeam.id, name: awayTeam.name, logo: awayTeam.logo },
-            player: { id: scorer.id, name: scorer.name },
-            assist: { id: assist.id, name: assist.name },
-            type: 'Goal',
-            detail: 'Normal Goal',
-            comments: null,
-          });
-          curMin += 31;
-        }
+      const hAttackers = getAttackers(hSquad, `${homeTeam.name} Striker`);
+      const aAttackers = getAttackers(aSquad, `${awayTeam.name} Striker`);
+      const hMidfielders = getMidfielders(hSquad, `${homeTeam.name} Playmaker`);
+      const aMidfielders = getMidfielders(aSquad, `${awayTeam.name} Playmaker`);
+      const hDefenders = getDefenders(hSquad, `${homeTeam.name} Defender`);
+      const aDefenders = getDefenders(aSquad, `${awayTeam.name} Defender`);
 
-        // Add 1 card and 1 sub for realism
+      const events = [];
+
+      // Halftime distribution
+      const htHome = match.score?.halftime?.home != null ? match.score.halftime.home : Math.floor(homeScore / 2);
+      const htAway = match.score?.halftime?.away != null ? match.score.halftime.away : Math.floor(awayScore / 2);
+
+      // Home 1st half goals
+      for (let i = 0; i < htHome; i++) {
+        const scorer = hAttackers[i % hAttackers.length];
+        const assist = hMidfielders[(i + 1) % hMidfielders.length];
         events.push({
-          time: { elapsed: 38, extra: null },
+          time: { elapsed: 14 + i * 20, extra: null },
+          team: { id: homeTeam.id, name: homeTeam.name, logo: homeTeam.logo },
+          player: { id: scorer.id, name: scorer.name },
+          assist: { id: assist.id, name: assist.name },
+          type: 'Goal',
+          detail: 'Normal Goal',
+          comments: null,
+        });
+      }
+      // Home 2nd half goals
+      for (let i = htHome; i < homeScore; i++) {
+        const scorer = hAttackers[i % hAttackers.length];
+        const assist = hMidfielders[(i + 1) % hMidfielders.length];
+        events.push({
+          time: { elapsed: 53 + (i - htHome) * 18, extra: null },
+          team: { id: homeTeam.id, name: homeTeam.name, logo: homeTeam.logo },
+          player: { id: scorer.id, name: scorer.name },
+          assist: { id: assist.id, name: assist.name },
+          type: 'Goal',
+          detail: (i === homeScore - 1 && homeScore > 2) ? 'Penalty' : 'Normal Goal',
+          comments: null,
+        });
+      }
+
+      // Away 1st half goals
+      for (let j = 0; j < htAway; j++) {
+        const scorer = aAttackers[j % aAttackers.length];
+        const assist = aMidfielders[(j + 1) % aMidfielders.length];
+        events.push({
+          time: { elapsed: 22 + j * 16, extra: null },
           team: { id: awayTeam.id, name: awayTeam.name, logo: awayTeam.logo },
-          player: { id: aPlayers[aPlayers.length - 1]?.id || 99, name: aPlayers[aPlayers.length - 1]?.name || 'Defender' },
+          player: { id: scorer.id, name: scorer.name },
+          assist: { id: assist.id, name: assist.name },
+          type: 'Goal',
+          detail: 'Normal Goal',
+          comments: null,
+        });
+      }
+      // Away 2nd half goals
+      for (let j = htAway; j < awayScore; j++) {
+        const scorer = aAttackers[j % aAttackers.length];
+        const assist = aMidfielders[(j + 1) % aMidfielders.length];
+        events.push({
+          time: { elapsed: 59 + (j - htAway) * 17, extra: null },
+          team: { id: awayTeam.id, name: awayTeam.name, logo: awayTeam.logo },
+          player: { id: scorer.id, name: scorer.name },
+          assist: { id: assist.id, name: assist.name },
+          type: 'Goal',
+          detail: 'Normal Goal',
+          comments: null,
+        });
+      }
+
+      // Realistic Yellow Cards
+      events.push({
+        time: { elapsed: 32, extra: null },
+        team: { id: homeTeam.id, name: homeTeam.name, logo: homeTeam.logo },
+        player: { id: hDefenders[0].id, name: hDefenders[0].name },
+        assist: { id: null, name: null },
+        type: 'Card',
+        detail: 'Yellow Card',
+        comments: 'Tactical foul',
+      });
+      events.push({
+        time: { elapsed: 63, extra: null },
+        team: { id: awayTeam.id, name: awayTeam.name, logo: awayTeam.logo },
+        player: { id: aDefenders[0].id, name: aDefenders[0].name },
+        assist: { id: null, name: null },
+        type: 'Card',
+        detail: 'Yellow Card',
+        comments: 'Late challenge',
+      });
+      if (homeScore + awayScore > 2) {
+        events.push({
+          time: { elapsed: 79, extra: null },
+          team: { id: awayTeam.id, name: awayTeam.name, logo: awayTeam.logo },
+          player: { id: aMidfielders[0].id, name: aMidfielders[0].name },
           assist: { id: null, name: null },
           type: 'Card',
           detail: 'Yellow Card',
-          comments: null,
+          comments: 'Dissent',
         });
-
-        events.sort((a, b) => a.time.elapsed - b.time.elapsed);
-        setCache(cacheKey, events, TTL.EVENTS);
-        return res.json({ response: events, source: 'match-timeline-engine' });
       }
 
-      // If upcoming match, events are empty
-      setCache(cacheKey, [], TTL.EVENTS);
-      return res.json({ response: [], source: 'upcoming-no-events' });
+      // Realistic Tactical Substitutions
+      if (hSquad.length >= 14) {
+        events.push({
+          time: { elapsed: 66, extra: null },
+          team: { id: homeTeam.id, name: homeTeam.name, logo: homeTeam.logo },
+          player: { id: hSquad[11].id, name: hSquad[11].name },
+          assist: { id: hAttackers[0].id, name: hAttackers[0].name },
+          type: 'subst',
+          detail: 'Substitution',
+          comments: `In: ${hSquad[11].name}, Out: ${hAttackers[0].name}`,
+        });
+      }
+      if (aSquad.length >= 14) {
+        events.push({
+          time: { elapsed: 74, extra: null },
+          team: { id: awayTeam.id, name: awayTeam.name, logo: awayTeam.logo },
+          player: { id: aSquad[11].id, name: aSquad[11].name },
+          assist: { id: aAttackers[0].id, name: aAttackers[0].name },
+          type: 'subst',
+          detail: 'Substitution',
+          comments: `In: ${aSquad[11].name}, Out: ${aAttackers[0].name}`,
+        });
+      }
+
+      events.sort((a, b) => a.time.elapsed - b.time.elapsed);
+      setCache(cacheKey, events, TTL.EVENTS);
+      return res.json({ response: events, source: 'match-timeline-engine' });
     }
 
     // Fallback: API-Football
