@@ -9,22 +9,128 @@ import '../../../../domain/entities/video_highlight.dart';
 import '../../../providers/fixture_detail_provider.dart';
 import '../../../providers/team_provider.dart';
 import '../../live_tv/video_player_screen.dart';
+import '../../../widgets/live_pitch_tracker_widget.dart';
 
-class OverviewTab extends ConsumerWidget {
+class OverviewTab extends ConsumerStatefulWidget {
   final Fixture fixture;
 
   const OverviewTab({super.key, required this.fixture});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<OverviewTab> createState() => _OverviewTabState();
+}
+
+class _OverviewTabState extends ConsumerState<OverviewTab> {
+  Fixture get fixture => widget.fixture;
+  int _selectedViewMode = 0; // 0 = 2D Live Tracker, 1 = Highlights
+
+  @override
+  void initState() {
+    super.initState();
+    _selectedViewMode = widget.fixture.isLive ? 0 : 0;
+  }
+
+  Widget _buildViewModeToggle() {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.all(4),
+      decoration: BoxDecoration(
+        color: AppColors.secondary,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.white10),
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: InkWell(
+              onTap: () => setState(() => _selectedViewMode = 0),
+              borderRadius: BorderRadius.circular(9),
+              child: Container(
+                padding: const EdgeInsets.symmetric(vertical: 8),
+                decoration: BoxDecoration(
+                  color: _selectedViewMode == 0 ? AppColors.primary : Colors.transparent,
+                  borderRadius: BorderRadius.circular(9),
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(
+                      Icons.sensors,
+                      size: 15,
+                      color: _selectedViewMode == 0 ? Colors.black : Colors.white70,
+                    ),
+                    const SizedBox(width: 6),
+                    Text(
+                      '2D LIVE TRACKER',
+                      style: TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.bold,
+                        color: _selectedViewMode == 0 ? Colors.black : Colors.white70,
+                        letterSpacing: 0.5,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+          Expanded(
+            child: InkWell(
+              onTap: () => setState(() => _selectedViewMode = 1),
+              borderRadius: BorderRadius.circular(9),
+              child: Container(
+                padding: const EdgeInsets.symmetric(vertical: 8),
+                decoration: BoxDecoration(
+                  color: _selectedViewMode == 1 ? AppColors.primary : Colors.transparent,
+                  borderRadius: BorderRadius.circular(9),
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(
+                      Icons.play_circle_filled,
+                      size: 15,
+                      color: _selectedViewMode == 1 ? Colors.black : Colors.white70,
+                    ),
+                    const SizedBox(width: 6),
+                    Text(
+                      'HIGHLIGHTS',
+                      style: TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.bold,
+                        color: _selectedViewMode == 1 ? Colors.black : Colors.white70,
+                        letterSpacing: 0.5,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final eventsAsync = ref.watch(fixtureEventsProvider(fixture.id));
+    final events = eventsAsync.value ?? [];
 
     return ListView(
       padding: const EdgeInsets.all(16.0),
       children: [
         _buildMatchHeaderCard(context),
         const SizedBox(height: 16),
-        _buildMatchHighlightsCard(context, ref),
+        _buildViewModeToggle(),
+        if (_selectedViewMode == 0) ...[
+          LivePitchTrackerWidget(
+            fixture: fixture,
+            events: events,
+          ),
+        ] else ...[
+          _buildMatchHighlightsCard(context, ref),
+        ],
         const SizedBox(height: 16),
         _buildMatchInfoCard(),
         _buildVenueCard(ref),
