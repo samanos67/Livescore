@@ -38,12 +38,11 @@ class _LivePitchTrackerWidgetState extends State<LivePitchTrackerWidget>
   late AnimationController _animController;
   Timer? _simulationTimer;
 
-  PitchActionType _currentAction = PitchActionType.dangerousAttack;
+  PitchActionType _currentAction = PitchActionType.possession;
   bool _isHomeAttacking = true;
-  String _actionText = 'Dangerous Attack';
-  String _actionDetail = 'Pressing high in the penalty area';
-  int _selectedEventIndex = -1; // -1 means live simulation mode
-  int _simStep = 0;
+  String _actionText = 'Live in Play';
+  String _actionDetail = 'Tracking match in real-time';
+  int _selectedEventIndex = -1; // -1 means following live match
 
   @override
   void initState() {
@@ -53,8 +52,18 @@ class _LivePitchTrackerWidgetState extends State<LivePitchTrackerWidget>
       duration: const Duration(milliseconds: 2200),
     )..repeat();
 
-    _setupInitialState();
-    _startSimulationLoop();
+    _syncLiveMatchState();
+    _startLiveSyncTimer();
+  }
+
+  @override
+  void didUpdateWidget(covariant LivePitchTrackerWidget oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.fixture.elapsed != widget.fixture.elapsed ||
+        oldWidget.events.length != widget.events.length ||
+        oldWidget.fixture.statusShort != widget.fixture.statusShort) {
+      _syncLiveMatchState();
+    }
   }
 
   @override
@@ -64,71 +73,101 @@ class _LivePitchTrackerWidgetState extends State<LivePitchTrackerWidget>
     super.dispose();
   }
 
-  void _setupInitialState() {
-    if (widget.events.isNotEmpty) {
-      final lastGoal = widget.events.lastWhere(
-        (e) => e.isGoal,
-        orElse: () => widget.events.last,
-      );
-      _isHomeAttacking = lastGoal.teamId == widget.fixture.homeTeam.id;
-    } else {
-      _isHomeAttacking = true;
-    }
+  void _startLiveSyncTimer() {
+    _simulationTimer?.cancel();
+    _simulationTimer = Timer.periodic(const Duration(seconds: 10), (_) {
+      if (!mounted) return;
+      if (_selectedEventIndex == -1) {
+        _syncLiveMatchState();
+      }
+    });
   }
 
-  void _startSimulationLoop() {
-    _simulationTimer?.cancel();
-    _simulationTimer = Timer.periodic(const Duration(seconds: 4), (timer) {
-      if (!mounted) return;
-      if (_selectedEventIndex != -1) return; // In manual replay mode
+  void _syncLiveMatchState() {
+    if (!mounted) return;
+    if (_selectedEventIndex != -1) return; // User is viewing an explicit event
 
+    final status = widget.fixture.statusShort.toUpperCase();
+
+    // 1. Half-Time Break
+    if (status == 'HT') {
       setState(() {
-        _simStep = (_simStep + 1) % 6;
-        switch (_simStep) {
-          case 0:
-            _currentAction = PitchActionType.possession;
-            _actionText = 'Possession';
-            _actionDetail = _isHomeAttacking
-                ? '${widget.fixture.homeTeam.name} building up from midfield'
-                : '${widget.fixture.awayTeam.name} circulating possession';
-            break;
-          case 1:
-            _currentAction = PitchActionType.attack;
-            _actionText = 'Attack';
-            _actionDetail = _isHomeAttacking
-                ? '${widget.fixture.homeTeam.name} pushing along the wing'
-                : '${widget.fixture.awayTeam.name} advancing through the middle';
-            break;
-          case 2:
-            _currentAction = PitchActionType.dangerousAttack;
-            _actionText = 'Dangerous Attack';
-            _actionDetail = _isHomeAttacking
-                ? '${widget.fixture.homeTeam.name} crossing into the 18-yard box'
-                : '${widget.fixture.awayTeam.name} threatening the penalty area';
-            break;
-          case 3:
-            _currentAction = PitchActionType.shotOnTarget;
-            _actionText = 'Shot on Target';
-            _actionDetail = 'Effort saved by the goalkeeper!';
-            break;
-          case 4:
-            _currentAction = PitchActionType.cornerKick;
-            _actionText = 'Corner Kick';
-            _actionDetail = _isHomeAttacking
-                ? 'Corner delivered by ${widget.fixture.homeTeam.name}'
-                : 'In-swinging corner for ${widget.fixture.awayTeam.name}';
-            break;
-          case 5:
-            // Alternate attacking team for dynamism
-            _isHomeAttacking = !_isHomeAttacking;
-            _currentAction = PitchActionType.attack;
-            _actionText = 'Counter Attack';
-            _actionDetail = _isHomeAttacking
-                ? 'Rapid break initiated by ${widget.fixture.homeTeam.name}'
-                : 'Counter offensive launched by ${widget.fixture.awayTeam.name}';
-            break;
-        }
+        _currentAction = PitchActionType.possession;
+        _actionText = 'HALF TIME (HT)';
+        _actionDetail = 'Break in play. Teams in dressing room.';
+        _isHomeAttacking = true;
       });
+      return;
+    }
+
+    // 2. Full-Time or Finished
+    if (widget.fixture.isFinished || status == 'FT' || status == 'AET' || status == 'PEN') {
+      setState(() {
+        _currentAction = PitchActionType.possession;
+        _actionText = 'FULL TIME (${widget.fixture.goalsHome ?? 0}-${widget.fixture.goalsAway ?? 0})';
+        _actionDetail = 'Match completed.';
+        _isHomeAttacking = true;
+      });
+      return;
+    }
+
+    // 3. Not Started / Upcoming
+    if (status == 'NS' || status == 'TBD') {
+      setState(() {
+        _currentAction = PitchActionType.possession;
+        _actionText = 'PRE-MATCH';
+        _actionDetail = 'Match has not started yet. Radar activates at kick-off.';
+        _isHomeAttacking = true;
+      });
+      return;
+    }
+
+    // 4. Live Match in Play (1H, 2H, ET, etc.)
+    // Inspect actual real-time events that occurred
+    if (widget.events.isNotEmpty) {
+      final sorted = List<MatchEvent>.from(widget.events)
+        ..sort((a, b) => a.elapsed.compareTo(b.elapsed));
+      final latest = sorted.last;
+      final currentElapsed = widget.fixture.elapsed ?? latest.elapsed;
+      final isRecent = (currentElapsed - latest.elapsed).abs() <= 5;
+
+      if (isRecent) {
+        final isHome = latest.teamId == widget.fixture.homeTeam.id;
+        final teamName = isHome ? widget.fixture.homeTeam.name : widget.fixture.awayTeam.name;
+
+        setState(() {
+          _isHomeAttacking = isHome;
+          if (latest.isGoal) {
+            _currentAction = latest.detail.toLowerCase().contains('pen')
+                ? PitchActionType.penalty
+                : PitchActionType.goal;
+            _actionText = "GOAL! (${latest.elapsed}')";
+            _actionDetail = "${latest.playerName} scores for $teamName!";
+          } else if (latest.isYellowCard || latest.isRedCard) {
+            _currentAction = PitchActionType.yellowCard;
+            _actionText = "${latest.isRedCard ? 'RED CARD' : 'BOOKING'} (${latest.elapsed}')";
+            _actionDetail = "${latest.playerName} ($teamName) booked";
+          } else if (latest.isSub) {
+            _currentAction = PitchActionType.substitution;
+            _actionText = "SUBSTITUTION (${latest.elapsed}')";
+            _actionDetail = "${latest.playerName} brought on for $teamName";
+          } else {
+            _currentAction = PitchActionType.dangerousAttack;
+            _actionText = "${latest.elapsed}' INCIDENT";
+            _actionDetail = "${latest.playerName}: ${latest.detail}";
+          }
+        });
+        return;
+      }
+    }
+
+    // 5. Active Live Game Open Play
+    final elapsedMin = widget.fixture.elapsed ?? 1;
+    setState(() {
+      _currentAction = PitchActionType.possession;
+      _actionText = "$elapsedMin' LIVE IN PLAY";
+      _actionDetail = "${widget.fixture.homeTeam.name} ${widget.fixture.goalsHome ?? 0} - ${widget.fixture.goalsAway ?? 0} ${widget.fixture.awayTeam.name}";
+      _isHomeAttacking = ((elapsedMin ~/ 2) % 2 == 0);
     });
   }
 
@@ -137,7 +176,7 @@ class _LivePitchTrackerWidgetState extends State<LivePitchTrackerWidget>
       setState(() {
         _selectedEventIndex = -1;
       });
-      _startSimulationLoop();
+      _syncLiveMatchState();
       return;
     }
 
@@ -365,7 +404,7 @@ class _LivePitchTrackerWidgetState extends State<LivePitchTrackerWidget>
                 ),
                 const SizedBox(width: 8),
                 Text(
-                  '2D RADAR',
+                  'LIVE TRACKER',
                   style: TextStyle(
                     color: actionColor.withOpacity(0.7),
                     fontSize: 9,
@@ -386,7 +425,7 @@ class _LivePitchTrackerWidgetState extends State<LivePitchTrackerWidget>
               child: ListView(
                 scrollDirection: Axis.horizontal,
                 children: [
-                  // Live Radar Auto Mode Pill
+                  // Live Now Mode Pill
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 6),
                     child: ChoiceChip(
@@ -395,7 +434,7 @@ class _LivePitchTrackerWidgetState extends State<LivePitchTrackerWidget>
                         children: [
                           Icon(Icons.sensors, size: 11, color: _selectedEventIndex == -1 ? Colors.black : AppColors.primary),
                           const SizedBox(width: 4),
-                          const Text('LIVE RADAR', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold)),
+                          const Text('LIVE NOW', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold)),
                         ],
                       ),
                       selected: _selectedEventIndex == -1,

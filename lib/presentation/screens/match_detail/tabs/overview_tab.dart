@@ -122,13 +122,18 @@ class _OverviewTabState extends ConsumerState<OverviewTab> {
       children: [
         _buildMatchHeaderCard(context),
         const SizedBox(height: 16),
-        _buildViewModeToggle(),
-        if (_selectedViewMode == 0) ...[
-          LivePitchTrackerWidget(
-            fixture: fixture,
-            events: events,
-          ),
+        // ── 2D LIVE TRACKER: ONLY for LIVE matches! ───
+        if (fixture.isLive) ...[
+          _buildViewModeToggle(),
+          if (_selectedViewMode == 0)
+            LivePitchTrackerWidget(
+              fixture: fixture,
+              events: events,
+            )
+          else
+            _buildMatchHighlightsCard(context, ref),
         ] else ...[
+          // For completed or upcoming matches: directly show the Match Highlights card!
           _buildMatchHighlightsCard(context, ref),
         ],
         const SizedBox(height: 16),
