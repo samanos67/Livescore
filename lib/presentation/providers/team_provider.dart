@@ -67,6 +67,14 @@ final teamFixturesProvider =
   return items; // FixtureModel extends Fixture
 });
 
+// ─── Team Season Stats ────────────────────────────────────────────────────────
+
+final teamStatsProvider =
+    FutureProvider.family<Map<String, dynamic>?, int>((ref, teamId) async {
+  final api = ref.read(footballApiServiceProvider);
+  return await api.getTeamStats(teamId);
+});
+
 // ─── Team News ────────────────────────────────────────────────────────────────
 
 final teamNewsProvider =

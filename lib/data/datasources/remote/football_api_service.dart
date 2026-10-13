@@ -239,4 +239,18 @@ class FootballApiService {
       return [];
     }
   }
+
+  // ─── Team Season Stats ────────────────────────────────────────────────────
+
+  Future<Map<String, dynamic>?> getTeamStats(int teamId, {String season = '2024'}) async {
+    try {
+      final data = await _get('/teams/$teamId/stats', params: {'season': season});
+      final resp = data['response'];
+      if (resp is Map) return Map<String, dynamic>.from(resp);
+      return null;
+    } catch (_) {
+      return null;
+    }
+  }
 }
+

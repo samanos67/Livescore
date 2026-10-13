@@ -47,10 +47,11 @@ class TeamFixturesTab extends ConsumerWidget {
         }
 
         final now      = DateTime.now();
-        final upcoming = fixtures.where((f) =>
-          (f.statusShort == 'NS' || f.statusShort == 'TBD') &&
-          f.date.isAfter(now)
-        ).toList()..sort((a, b) => a.date.compareTo(b.date));
+        final upcoming = fixtures.where((f) {
+          final s = f.statusShort;
+          return (s == 'NS' || s == 'TBD' || s == 'TIMED' || s == 'SCHEDULED') &&
+              f.date.isAfter(now);
+        }).toList()..sort((a, b) => a.date.compareTo(b.date));
 
         final past = fixtures.where((f) =>
           f.isFinished

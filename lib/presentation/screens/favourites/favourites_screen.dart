@@ -334,10 +334,12 @@ class _TeamNextFixture extends ConsumerWidget {
       loading: () => const SizedBox(height: 60, child: Center(child: LinearProgressIndicator())),
       error: (_, __) => const SizedBox.shrink(),
       data: (fixtures) {
-        final next = fixtures.where((f) =>
-          f.statusShort == 'NS' &&
-          f.date.isAfter(DateTime.now())
-        ).toList();
+        final next = fixtures.where((f) {
+          final s = f.statusShort;
+          return (s == 'NS' || s == 'TBD' || s == 'TIMED' || s == 'SCHEDULED') &&
+              f.date.isAfter(DateTime.now());
+        }).toList();
+        next.sort((a, b) => a.date.compareTo(b.date));
         if (next.isEmpty) return const SizedBox.shrink();
         return MatchCard(fixture: next.first);
       },

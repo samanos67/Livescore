@@ -23,6 +23,7 @@ class TeamOverviewTab extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final teamInfoAsync    = ref.watch(teamInfoProvider(teamId));
     final teamFixAsync     = ref.watch(teamFixturesProvider(teamId));
+    final teamStatsAsync   = ref.watch(teamStatsProvider(teamId));
     final highlightsAsync  = ref.watch(teamHighlightsProvider(teamName));
     final newsAsync        = ref.watch(teamNewsProvider(teamName));
 
@@ -40,13 +41,33 @@ class TeamOverviewTab extends ConsumerWidget {
         ),
         const SizedBox(height: 16),
 
+        // ── Quick Stats Strip (from season stats) ─────────────────────────────
+        teamStatsAsync.when(
+          data: (stats) {
+            if (stats == null) return const SizedBox.shrink();
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _sectionTitle('Season Stats'),
+                _QuickStatsStrip(stats: stats),
+                const SizedBox(height: 16),
+              ],
+            );
+          },
+          loading: () => const SizedBox.shrink(),
+          error: (_, __) => const SizedBox.shrink(),
+        ),
+
         // ── Next Fixture ──────────────────────────────────────────────────────
         teamFixAsync.when(
           data: (fixtures) {
-            final upcoming = fixtures.where((f) =>
-              f.statusShort == 'NS' &&
-              f.date.isAfter(DateTime.now())
-            ).toList();
+            final now = DateTime.now();
+            final upcoming = fixtures.where((f) {
+              final s = f.statusShort;
+              return (s == 'NS' || s == 'TBD' || s == 'TIMED' || s == 'SCHEDULED') &&
+                  f.date.isAfter(now);
+            }).toList();
+            upcoming.sort((a, b) => a.date.compareTo(b.date));
             if (upcoming.isEmpty) return const SizedBox.shrink();
             final next = upcoming.first;
             return Column(
@@ -65,11 +86,10 @@ class TeamOverviewTab extends ConsumerWidget {
         // ── Recent Form ───────────────────────────────────────────────────────
         teamFixAsync.when(
           data: (fixtures) {
-            final finished = fixtures.where((f) =>
-              f.isFinished
-            ).toList();
+            final finished = fixtures.where((f) => f.isFinished).toList();
             if (finished.isEmpty) return const SizedBox.shrink();
-            final last5   = finished.reversed.take(5).toList().reversed.toList();
+            finished.sort((a, b) => b.date.compareTo(a.date));
+            final last5 = finished.take(5).toList().reversed.toList();
             return Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -133,8 +153,9 @@ class TeamOverviewTab extends ConsumerWidget {
   );
 }
 
+
 // ─────────────────────────────────────────────────────────────────────────────
-// Team Info Card
+// Team Info Card – full details
 // ─────────────────────────────────────────────────────────────────────────────
 class _TeamInfoCard extends StatelessWidget {
   final dynamic info;
@@ -142,51 +163,69 @@ class _TeamInfoCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colours = info.colours as List<String>;
     return Card(
+      clipBehavior: Clip.antiAlias,
       child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Stadium banner or colour strip
-          if (info.stadiumImage.isNotEmpty)
-            ClipRRect(
-              borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
-              child: CachedNetworkImage(
-                imageUrl: info.stadiumImage,
-                height: 160,
-                width: double.infinity,
-                fit: BoxFit.cover,
-                errorWidget: (_, __, ___) => Container(
-                  height: 160,
-                  color: AppColors.secondary,
-                  child: const Icon(Icons.stadium, size: 60, color: Colors.white30),
-                ),
-              ),
-            ),
+          // ── Header: stadium image or colour gradient banner ──────────────
+          _buildHero(colours),
+
+          // ── Colour strip ──────────────────────────────────────────────────
+          if (colours.isNotEmpty) _ColourStrip(colours: colours),
+
           Padding(
             padding: const EdgeInsets.all(16),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Info grid
-                Wrap(
-                  spacing: 16,
-                  runSpacing: 10,
+                // ── Jersey + info column ───────────────────────────────────
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    if (info.stadium.isNotEmpty)
-                      _InfoChip(icon: Icons.stadium, label: info.stadium),
-                    if (info.city.isNotEmpty)
-                      _InfoChip(icon: Icons.location_on, label: info.city),
-                    if (info.founded.isNotEmpty)
-                      _InfoChip(icon: Icons.calendar_today, label: 'Est. ${info.founded}'),
-                    if (info.manager.isNotEmpty)
-                      _InfoChip(icon: Icons.person, label: info.manager),
-                    if (info.stadiumCapacity.isNotEmpty)
-                      _InfoChip(icon: Icons.people, label: '${info.stadiumCapacity} seats'),
+                    // Jersey image
+                    if (info.jersey.isNotEmpty)
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(8),
+                        child: CachedNetworkImage(
+                          imageUrl: info.jersey,
+                          width: 64,
+                          height: 80,
+                          fit: BoxFit.contain,
+                          errorWidget: (_, __, ___) => const SizedBox(width: 64, height: 80),
+                        ),
+                      ),
+                    if (info.jersey.isNotEmpty) const SizedBox(width: 14),
+                    // Info chips
+                    Expanded(
+                      child: Wrap(
+                        spacing: 12,
+                        runSpacing: 10,
+                        children: [
+                          if (info.stadium.isNotEmpty)
+                            _InfoChip(icon: Icons.stadium, label: info.stadium),
+                          if (info.city.isNotEmpty)
+                            _InfoChip(icon: Icons.location_on, label: '${info.city}${info.country.isNotEmpty ? ', ${info.country}' : ''}'),
+                          if (info.founded.isNotEmpty)
+                            _InfoChip(icon: Icons.calendar_today, label: 'Est. ${info.founded}'),
+                          if (info.manager.isNotEmpty)
+                            _InfoChip(icon: Icons.person, label: info.manager),
+                          if (info.stadiumCapacity.isNotEmpty)
+                            _InfoChip(icon: Icons.people, label: '${info.stadiumCapacity} capacity'),
+                          if (info.website.isNotEmpty)
+                            _InfoChip(icon: Icons.language, label: 'Website', onTap: () => launchUrl(Uri.parse(info.website), mode: LaunchMode.externalApplication)),
+                        ],
+                      ),
+                    ),
                   ],
                 ),
 
-                // Description
+                // ── Description ───────────────────────────────────────────
                 if (info.description.isNotEmpty) ...[
                   const SizedBox(height: 14),
+                  const Divider(height: 1),
+                  const SizedBox(height: 10),
                   _ExpandableText(text: info.description),
                 ],
               ],
@@ -196,16 +235,221 @@ class _TeamInfoCard extends StatelessWidget {
       ),
     );
   }
+
+  Widget _buildHero(List<String> colours) {
+    if (info.stadiumImage.isNotEmpty) {
+      return Stack(
+        children: [
+          CachedNetworkImage(
+            imageUrl: info.stadiumImage,
+            height: 170,
+            width: double.infinity,
+            fit: BoxFit.cover,
+            errorWidget: (_, __, ___) => _colourBanner(colours),
+          ),
+          // Dark overlay
+          Container(
+            height: 170,
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: [Colors.transparent, Colors.black.withOpacity(0.6)],
+              ),
+            ),
+          ),
+          // Large logo bottom-left
+          if (info.logo.isNotEmpty)
+            Positioned(
+              bottom: 12,
+              left: 16,
+              child: Container(
+                width: 72,
+                height: 72,
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  shape: BoxShape.circle,
+                  boxShadow: [BoxShadow(color: Colors.black26, blurRadius: 8)],
+                ),
+                child: Padding(
+                  padding: const EdgeInsets.all(6),
+                  child: CachedNetworkImage(
+                    imageUrl: info.logo,
+                    fit: BoxFit.contain,
+                    errorWidget: (_, __, ___) => const Icon(Icons.sports_soccer, size: 36),
+                  ),
+                ),
+              ),
+            ),
+          // Team name bottom-right of banner
+          Positioned(
+            bottom: 12,
+            left: 104,
+            right: 12,
+            child: Text(
+              info.shortName.isNotEmpty ? info.shortName : info.name,
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
+                shadows: [Shadow(color: Colors.black, blurRadius: 4)],
+              ),
+            ),
+          ),
+        ],
+      );
+    }
+    return _colourBanner(colours);
+  }
+
+  Widget _colourBanner(List<String> colours) {
+    if (colours.isEmpty) {
+      return Container(
+        height: 120,
+        color: AppColors.secondary,
+        child: Center(
+          child: info.logo.isNotEmpty
+              ? CachedNetworkImage(imageUrl: info.logo, height: 80)
+              : const Icon(Icons.sports_soccer, size: 60, color: Colors.white30),
+        ),
+      );
+    }
+    // Build colour strip banner
+    final parsedColours = colours.map((c) => _parseColour(c)).toList();
+    return Container(
+      height: 120,
+      decoration: BoxDecoration(
+        gradient: LinearGradient(colors: parsedColours),
+      ),
+      child: Center(
+        child: info.logo.isNotEmpty
+            ? Container(
+                width: 80,
+                height: 80,
+                decoration: const BoxDecoration(
+                  color: Colors.white,
+                  shape: BoxShape.circle,
+                ),
+                padding: const EdgeInsets.all(6),
+                child: CachedNetworkImage(imageUrl: info.logo, fit: BoxFit.contain),
+              )
+            : const Icon(Icons.sports_soccer, size: 60, color: Colors.white70),
+      ),
+    );
+  }
+
+  Color _parseColour(String hex) {
+    try {
+      final clean = hex.replaceAll('#', '');
+      return Color(int.parse('FF$clean', radix: 16));
+    } catch (_) {
+      return AppColors.primary;
+    }
+  }
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Colour Strip widget
+// ─────────────────────────────────────────────────────────────────────────────
+class _ColourStrip extends StatelessWidget {
+  final List<String> colours;
+  const _ColourStrip({required this.colours});
+
+  Color _parse(String hex) {
+    try {
+      return Color(int.parse('FF${hex.replaceAll('#', '')}', radix: 16));
+    } catch (_) {
+      return AppColors.primary;
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      height: 8,
+      child: Row(
+        children: colours
+            .map((c) => Expanded(child: ColoredBox(color: _parse(c))))
+            .toList(),
+      ),
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Quick Stats Strip (W/D/L + goals)
+// ─────────────────────────────────────────────────────────────────────────────
+class _QuickStatsStrip extends StatelessWidget {
+  final Map<String, dynamic> stats;
+  const _QuickStatsStrip({required this.stats});
+
+  @override
+  Widget build(BuildContext context) {
+    final played = stats['played'] ?? 0;
+    final wins   = stats['wins'] ?? 0;
+    final draws  = stats['draws'] ?? 0;
+    final losses = stats['losses'] ?? 0;
+    final gf     = stats['goalsFor'] ?? 0;
+    final ga     = stats['goalsAgainst'] ?? 0;
+    final gd     = stats['goalDifference'] ?? 0;
+
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 8),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceAround,
+          children: [
+            _MiniStat(label: 'Played', value: '$played', color: Colors.grey),
+            _divider(),
+            _MiniStat(label: 'Won', value: '$wins', color: Colors.green),
+            _divider(),
+            _MiniStat(label: 'Drawn', value: '$draws', color: Colors.orange),
+            _divider(),
+            _MiniStat(label: 'Lost', value: '$losses', color: Colors.redAccent),
+            _divider(),
+            _MiniStat(label: 'GF', value: '$gf', color: Colors.green),
+            _divider(),
+            _MiniStat(label: 'GA', value: '$ga', color: Colors.redAccent),
+            _divider(),
+            _MiniStat(label: 'GD', value: '${gd >= 0 ? '+' : ''}$gd',
+                color: gd >= 0 ? Colors.green : Colors.redAccent),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _divider() => Container(width: 1, height: 30, color: Colors.white12);
+}
+
+class _MiniStat extends StatelessWidget {
+  final String label;
+  final String value;
+  final Color color;
+  const _MiniStat({required this.label, required this.value, required this.color});
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        Text(value, style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: color)),
+        const SizedBox(height: 2),
+        Text(label, style: const TextStyle(fontSize: 10, color: Colors.grey)),
+      ],
+    );
+  }
+}
+
 
 class _InfoChip extends StatelessWidget {
   final IconData icon;
   final String label;
-  const _InfoChip({required this.icon, required this.label});
+  final VoidCallback? onTap;
+  const _InfoChip({required this.icon, required this.label, this.onTap});
 
   @override
   Widget build(BuildContext context) {
-    return Row(
+    final child = Row(
       mainAxisSize: MainAxisSize.min,
       children: [
         Icon(icon, size: 14, color: AppColors.primary),
@@ -213,6 +457,10 @@ class _InfoChip extends StatelessWidget {
         Flexible(child: Text(label, style: const TextStyle(fontSize: 13))),
       ],
     );
+    if (onTap != null) {
+      return GestureDetector(onTap: onTap, child: child);
+    }
+    return child;
   }
 }
 

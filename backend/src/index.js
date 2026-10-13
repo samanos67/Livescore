@@ -636,7 +636,7 @@ app.get('/teams/:teamId/squad', async (req, res) => {
 // ─────────────────────────────────────────────────────────────────────────────
 // GET /teams/:teamId/fixtures?season=2024
 // Returns team's season schedule (past + upcoming)
-// Source: Football-Data.org → API-Football fallback
+// Source: Preloaded season cache (instant) → Football-Data.org → API-Football fallback
 // ─────────────────────────────────────────────────────────────────────────────
 app.get('/teams/:teamId/fixtures', async (req, res) => {
   const teamId   = parseInt(req.params.teamId);
@@ -645,17 +645,32 @@ app.get('/teams/:teamId/fixtures', async (req, res) => {
   const cached   = getCached(cacheKey);
   if (cached) return res.json({ response: cached, source: 'cache' });
 
+  // 1. Search the preloaded season fixtures cache first (fastest, no API quota)
+  if (ALL_SEASON_FIXTURES.length > 0) {
+    const found = ALL_SEASON_FIXTURES.filter(f =>
+      f.teams?.home?.id === teamId || f.teams?.away?.id === teamId
+    );
+    if (found.length > 0) {
+      // Sort chronologically
+      found.sort((a, b) => new Date(a.fixture?.date) - new Date(b.fixture?.date));
+      setCache(cacheKey, found, TTL.TEAM_FIX);
+      return res.json({ response: found, source: 'preloaded-season-cache', count: found.length });
+    }
+  }
+
+  // 2. Football-Data.org /teams/:id/matches
   try {
     const r       = await footballDataClient.get(`/teams/${teamId}/matches`, { params: { season } });
     const matches = r.data?.matches ?? [];
     if (matches.length > 0) {
       const data = matches.map(normalizeFDFixture);
+      data.sort((a, b) => new Date(a.fixture?.date) - new Date(b.fixture?.date));
       setCache(cacheKey, data, TTL.TEAM_FIX);
       return res.json({ response: data, source: 'football-data.org' });
     }
   } catch (e) { console.warn('[team-fixtures] FD failed:', e.message); }
 
-  // Fallback: API-Football
+  // 3. Fallback: API-Football
   try {
     const r    = await apiFootballClient.get('/fixtures', { params: { team: teamId, season } });
     const data = r.data?.response ?? [];
@@ -665,6 +680,87 @@ app.get('/teams/:teamId/fixtures', async (req, res) => {
     console.error('[team-fixtures] All sources failed:', err.message);
     res.status(500).json({ error: 'Failed to fetch team fixtures', message: err.message });
   }
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// GET /teams/:teamId/stats?season=2024
+// Returns team season statistics computed from preloaded fixtures
+// ─────────────────────────────────────────────────────────────────────────────
+app.get('/teams/:teamId/stats', async (req, res) => {
+  const teamId   = parseInt(req.params.teamId);
+  const season   = req.query.season ?? '2024';
+  const cacheKey = `team_stats_${teamId}_${season}`;
+  const cached   = getCached(cacheKey);
+  if (cached) return res.json({ response: cached, source: 'cache' });
+
+  // Gather team fixtures from preload or a quick FD fetch
+  let fixtures = [];
+  if (ALL_SEASON_FIXTURES.length > 0) {
+    fixtures = ALL_SEASON_FIXTURES.filter(f =>
+      f.teams?.home?.id === teamId || f.teams?.away?.id === teamId
+    );
+  }
+
+  if (fixtures.length === 0) {
+    try {
+      const r = await footballDataClient.get(`/teams/${teamId}/matches`, { params: { season } });
+      fixtures = (r.data?.matches ?? []).map(normalizeFDFixture);
+    } catch (_) {}
+  }
+
+  // Compute stats from finished fixtures only
+  const finished = fixtures.filter(f => f.fixture?.status?.short === 'FT' || f.fixture?.status?.short === 'AET' || f.fixture?.status?.short === 'PEN');
+  let wins = 0, draws = 0, losses = 0, goalsFor = 0, goalsAgainst = 0, cleanSheets = 0;
+  const homeFixtures = [], awayFixtures = [];
+
+  for (const f of finished) {
+    const isHome = f.teams?.home?.id === teamId;
+    const gf = isHome ? (f.goals?.home ?? 0) : (f.goals?.away ?? 0);
+    const ga = isHome ? (f.goals?.away ?? 0) : (f.goals?.home ?? 0);
+    goalsFor     += gf;
+    goalsAgainst += ga;
+    if (ga === 0) cleanSheets++;
+    if (gf > ga)       wins++;
+    else if (gf === ga) draws++;
+    else               losses++;
+    if (isHome) homeFixtures.push(f); else awayFixtures.push(f);
+  }
+
+  const played = finished.length;
+  const homeWins = homeFixtures.filter(f => (f.goals?.home ?? 0) > (f.goals?.away ?? 0)).length;
+  const awayWins = awayFixtures.filter(f => (f.goals?.away ?? 0) > (f.goals?.home ?? 0)).length;
+
+  // Last 5 form
+  const last5 = finished.slice(-5).map(f => {
+    const isHome = f.teams?.home?.id === teamId;
+    const gf = isHome ? (f.goals?.home ?? 0) : (f.goals?.away ?? 0);
+    const ga = isHome ? (f.goals?.away ?? 0) : (f.goals?.home ?? 0);
+    return gf > ga ? 'W' : gf === ga ? 'D' : 'L';
+  });
+
+  const stats = {
+    teamId,
+    season,
+    played,
+    wins,
+    draws,
+    losses,
+    goalsFor,
+    goalsAgainst,
+    goalDifference: goalsFor - goalsAgainst,
+    cleanSheets,
+    homeRecord: { played: homeFixtures.length, wins: homeWins },
+    awayRecord: { played: awayFixtures.length, wins: awayWins },
+    avgGoalsScored: played > 0 ? (goalsFor / played).toFixed(2) : '0.00',
+    avgGoalsConceded: played > 0 ? (goalsAgainst / played).toFixed(2) : '0.00',
+    winRate: played > 0 ? `${Math.round((wins / played) * 100)}%` : '0%',
+    form: last5,
+    totalFixtures: fixtures.length,
+    upcomingCount: fixtures.filter(f => f.fixture?.status?.short === 'NS').length,
+  };
+
+  setCache(cacheKey, stats, TTL.TEAM_FIX);
+  return res.json({ response: stats, source: 'computed-from-fixtures' });
 });
 
 // ─────────────────────────────────────────────────────────────────────────────
