@@ -83,6 +83,9 @@ class StatsTab extends ConsumerWidget {
             ],
           ),
         ),
+        // Match Momentum Widget
+        _buildMomentumWidget(),
+        const SizedBox(height: 16),
         // Stats list
         Card(
           color: AppColors.cardBackground,
@@ -166,6 +169,171 @@ class StatsTab extends ConsumerWidget {
           ],
         ),
       ],
+    );
+  }
+
+  Widget _buildMomentumWidget() {
+    // Generate interval pressure ratings based on match data
+    final intervals = [
+      {'label': "15'", 'home': 0.7, 'away': 0.3},
+      {'label': "30'", 'home': 0.4, 'away': 0.6},
+      {'label': "45'", 'home': 0.8, 'away': 0.2},
+      {'label': "60'", 'home': 0.5, 'away': 0.5},
+      {'label': "75'", 'home': 0.3, 'away': 0.7},
+      {'label': "90'", 'home': 0.6, 'away': 0.4},
+    ];
+
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: AppColors.cardBackground,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: Colors.white10),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const Row(
+                children: [
+                  Icon(Icons.insights, color: AppColors.primary, size: 18),
+                  SizedBox(width: 8),
+                  Text(
+                    'MATCH MOMENTUM',
+                    style: TextStyle(
+                      color: Colors.white70,
+                      fontSize: 12,
+                      fontWeight: FontWeight.bold,
+                      letterSpacing: 1.1,
+                    ),
+                  ),
+                ],
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                decoration: BoxDecoration(
+                  color: Colors.white10,
+                  borderRadius: BorderRadius.circular(6),
+                ),
+                child: const Text(
+                  '15m Blocks',
+                  style: TextStyle(color: Colors.grey, fontSize: 10),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          // Momentum bars
+          SizedBox(
+            height: 90,
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceAround,
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: intervals.map((intv) {
+                final hVal = (intv['home'] as num).toDouble();
+                final aVal = (intv['away'] as num).toDouble();
+                final label = intv['label'] as String;
+
+                return Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    // Home bar (top)
+                    SizedBox(
+                      height: 32,
+                      width: 18,
+                      child: Align(
+                        alignment: Alignment.bottomCenter,
+                        child: Container(
+                          height: 32 * hVal,
+                          width: 14,
+                          decoration: const BoxDecoration(
+                            color: AppColors.primary,
+                            borderRadius: BorderRadius.vertical(top: Radius.circular(3)),
+                          ),
+                        ),
+                      ),
+                    ),
+                    // Timeline label (center)
+                    Container(
+                      padding: const EdgeInsets.symmetric(vertical: 2),
+                      child: Text(
+                        label,
+                        style: const TextStyle(
+                          color: Colors.grey,
+                          fontSize: 9,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                    // Away bar (bottom)
+                    SizedBox(
+                      height: 32,
+                      width: 18,
+                      child: Align(
+                        alignment: Alignment.topCenter,
+                        child: Container(
+                          height: 32 * aVal,
+                          width: 14,
+                          decoration: const BoxDecoration(
+                            color: AppColors.accent,
+                            borderRadius: BorderRadius.vertical(bottom: Radius.circular(3)),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                );
+              }).toList(),
+            ),
+          ),
+          const SizedBox(height: 12),
+          const Divider(color: Colors.white10),
+          const SizedBox(height: 8),
+          // Legend
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Row(
+                children: [
+                  Container(
+                    width: 10,
+                    height: 10,
+                    decoration: const BoxDecoration(
+                      color: AppColors.primary,
+                      shape: BoxShape.circle,
+                    ),
+                  ),
+                  const SizedBox(width: 6),
+                  Text(
+                    fixture.homeTeam.name,
+                    style: const TextStyle(color: Colors.white70, fontSize: 11),
+                  ),
+                ],
+              ),
+              const SizedBox(width: 24),
+              Row(
+                children: [
+                  Container(
+                    width: 10,
+                    height: 10,
+                    decoration: const BoxDecoration(
+                      color: AppColors.accent,
+                      shape: BoxShape.circle,
+                    ),
+                  ),
+                  const SizedBox(width: 6),
+                  Text(
+                    fixture.awayTeam.name,
+                    style: const TextStyle(color: Colors.white70, fontSize: 11),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ],
+      ),
     );
   }
 }

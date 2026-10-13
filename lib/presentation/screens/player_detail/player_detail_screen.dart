@@ -85,22 +85,21 @@ class PlayerDetailScreen extends StatelessWidget {
               ),
             ),
             Center(
-              child: player.photo.isNotEmpty
-                  ? CachedNetworkImage(
-                      imageUrl: player.photo,
-                      height: 200,
-                      fit: BoxFit.contain,
-                      errorWidget: (_, __, ___) => const Icon(
-                        Icons.person,
-                        size: 100,
-                        color: Colors.white24,
-                      ),
-                    )
-                  : const Icon(
-                      Icons.person,
-                      size: 100,
-                      color: Colors.white24,
-                    ),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(20),
+                child: CachedNetworkImage(
+                  imageUrl: player.photo.isNotEmpty
+                      ? player.photo
+                      : 'https://ui-avatars.com/api/?name=${Uri.encodeComponent(player.name.isNotEmpty ? player.name : "Player")}&background=1E293B&color=00D563&size=300&bold=true',
+                  height: 190,
+                  fit: BoxFit.contain,
+                  errorWidget: (_, __, ___) => const Icon(
+                    Icons.person,
+                    size: 100,
+                    color: Colors.white24,
+                  ),
+                ),
+              ),
             ),
             Container(
               decoration: BoxDecoration(

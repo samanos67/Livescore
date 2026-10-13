@@ -6,6 +6,10 @@ import '../../../providers/fixture_detail_provider.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../widgets/tactical_pitch_widget.dart';
 
+import '../../../../domain/entities/player.dart' as domain_player;
+import '../../../../domain/entities/team.dart';
+import '../../../providers/team_provider.dart';
+
 class LineupsTab extends ConsumerWidget {
   final Fixture fixture;
 
@@ -14,45 +18,46 @@ class LineupsTab extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final lineupsAsync = ref.watch(fixtureLineupsProvider(fixture.id));
+    final homeSquadAsync = ref.watch(teamSquadProvider(fixture.homeTeam.id));
+    final awaySquadAsync = ref.watch(teamSquadProvider(fixture.awayTeam.id));
 
-    return lineupsAsync.when(
-      data: (lineups) {
-        if (lineups.isEmpty) {
-          return Center(
-            child: Padding(
-              padding: const EdgeInsets.all(24.0),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const Icon(Icons.people_outline, size: 56, color: Colors.grey),
-                  const SizedBox(height: 16),
-                  const Text(
-                    'Lineups Not Announced Yet',
-                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    'Confirmed lineups are usually released 45-60 minutes before kick-off.',
-                    textAlign: TextAlign.center,
-                    style: TextStyle(color: Colors.grey[400], fontSize: 13),
-                  ),
-                ],
-              ),
-            ),
-          );
-        }
+    if (lineupsAsync.isLoading && !homeSquadAsync.hasValue && !awaySquadAsync.hasValue) {
+      return const Center(
+        child: CircularProgressIndicator(color: AppColors.primary),
+      );
+    }
 
-        final homeLineup = lineups.firstWhere(
-          (l) => l.team.id == fixture.homeTeam.id,
-          orElse: () => lineups[0],
-        );
-        final awayLineup = lineups.firstWhere(
-          (l) => l.team.id == fixture.awayTeam.id,
-          orElse: () => (lineups.length > 1 ? lineups[1] : lineups[0]),
-        );
+    // Determine lineups to display
+    List<Lineup> effectiveLineups = [];
 
-        return DefaultTabController(
-          length: 2,
+    final apiLineups = lineupsAsync.value ?? [];
+    if (apiLineups.isNotEmpty) {
+      effectiveLineups = apiLineups;
+    } else {
+      final homeSquad = homeSquadAsync.value ?? [];
+      final awaySquad = awaySquadAsync.value ?? [];
+      final homeL = _buildProbableLineup(fixture.homeTeam, homeSquad);
+      final awayL = _buildProbableLineup(fixture.awayTeam, awaySquad);
+      effectiveLineups = [homeL, awayL];
+    }
+
+    if (effectiveLineups.isEmpty) {
+      final homeL = _buildProbableLineup(fixture.homeTeam, const []);
+      final awayL = _buildProbableLineup(fixture.awayTeam, const []);
+      effectiveLineups = [homeL, awayL];
+    }
+
+    final homeLineup = effectiveLineups.firstWhere(
+      (l) => l.team.id == fixture.homeTeam.id,
+      orElse: () => effectiveLineups.first,
+    );
+    final awayLineup = effectiveLineups.firstWhere(
+      (l) => l.team.id == fixture.awayTeam.id,
+      orElse: () => (effectiveLineups.length > 1 ? effectiveLineups[1] : effectiveLineups.first),
+    );
+
+    return DefaultTabController(
+      length: 2,
           child: Column(
             children: [
               Container(
@@ -112,14 +117,91 @@ class LineupsTab extends ConsumerWidget {
             ],
           ),
         );
-      },
-      loading: () => const Center(child: CircularProgressIndicator()),
-      error: (err, stack) => Center(
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Text('Could not load lineups: $err'),
-        ),
+  }
+
+  Lineup _buildProbableLineup(Team team, List<domain_player.Player> squad) {
+    final gks = squad.where((p) => p.position.toLowerCase().contains('goal') || p.position == 'GK').toList();
+    final defs = squad.where((p) => p.position.toLowerCase().contains('def') || ['CB', 'LB', 'RB', 'D'].contains(p.position)).toList();
+    final mids = squad.where((p) => p.position.toLowerCase().contains('mid') || ['CM', 'CAM', 'DM', 'M'].contains(p.position)).toList();
+    final fwds = squad.where((p) => p.position.toLowerCase().contains('forw') || p.position.toLowerCase().contains('strik') || p.position.toLowerCase().contains('offen') || ['LW', 'RW', 'F', 'CF', 'ST'].contains(p.position)).toList();
+
+    final gk = gks.isNotEmpty ? gks.first : (squad.isNotEmpty ? squad.first : null);
+    final dList = defs.take(4).toList();
+    final mList = mids.take(3).toList();
+    final fList = fwds.take(3).toList();
+
+    final usedIds = <int>{
+      if (gk != null) gk.id,
+      ...dList.map((p) => p.id),
+      ...mList.map((p) => p.id),
+      ...fList.map((p) => p.id),
+    };
+    final remaining = squad.where((p) => !usedIds.contains(p.id)).toList();
+
+    while (dList.length < 4 && remaining.isNotEmpty) {
+      dList.add(remaining.removeAt(0));
+    }
+    while (mList.length < 3 && remaining.isNotEmpty) {
+      mList.add(remaining.removeAt(0));
+    }
+    while (fList.length < 3 && remaining.isNotEmpty) {
+      fList.add(remaining.removeAt(0));
+    }
+
+    const defaultDefs = ['Right Back', 'Centre Back', 'Centre Back', 'Left Back'];
+    const defaultMids = ['Central Midfield', 'Defensive Midfield', 'Attacking Midfield'];
+    const defaultFwds = ['Right Wing', 'Centre Forward', 'Left Wing'];
+
+    final starters = <Player>[
+      Player(
+        id: gk?.id ?? (team.id * 100 + 1),
+        name: gk?.name ?? 'Goalkeeper',
+        number: int.tryParse(gk?.number ?? '1') ?? 1,
+        pos: 'G',
+        grid: '1:1',
       ),
+      for (int i = 0; i < 4; i++)
+        Player(
+          id: i < dList.length ? dList[i].id : (team.id * 100 + 10 + i),
+          name: i < dList.length ? dList[i].name : defaultDefs[i],
+          number: i < dList.length ? (int.tryParse(dList[i].number) ?? (i + 2)) : (i + 2),
+          pos: 'D',
+          grid: '2:${i + 1}',
+        ),
+      for (int i = 0; i < 3; i++)
+        Player(
+          id: i < mList.length ? mList[i].id : (team.id * 100 + 20 + i),
+          name: i < mList.length ? mList[i].name : defaultMids[i],
+          number: i < mList.length ? (int.tryParse(mList[i].number) ?? (i + 6)) : (i + 6),
+          pos: 'M',
+          grid: '3:${i + 1}',
+        ),
+      for (int i = 0; i < 3; i++)
+        Player(
+          id: i < fList.length ? fList[i].id : (team.id * 100 + 30 + i),
+          name: i < fList.length ? fList[i].name : defaultFwds[i],
+          number: i < fList.length ? (int.tryParse(fList[i].number) ?? (i + 9)) : (i + 9),
+          pos: 'F',
+          grid: '4:${i + 1}',
+        ),
+    ];
+
+    final substitutes = remaining.take(9).map((p) =>
+      Player(
+        id: p.id,
+        name: p.name,
+        number: int.tryParse(p.number) ?? 12,
+        pos: p.position.isNotEmpty ? p.position[0] : 'M',
+        grid: null,
+      )
+    ).toList();
+
+    return Lineup(
+      team: team,
+      formation: '4-3-3',
+      startXI: starters,
+      substitutes: substitutes,
+      coach: const Coach(id: 0, name: 'Head Coach'),
     );
   }
 

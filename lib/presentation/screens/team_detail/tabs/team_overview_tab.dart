@@ -1,13 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:cached_network_image/cached_network_image.dart';
-import 'package:url_launcher/url_launcher.dart';
 import 'package:intl/intl.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../providers/team_provider.dart';
 import '../../../../domain/entities/fixture.dart';
 import '../../../../domain/entities/video_highlight.dart';
 import '../../../../domain/entities/news_article.dart';
+import '../../common/in_app_article_screen.dart';
+import '../../common/in_app_browser_screen.dart';
+import '../../live_tv/video_player_screen.dart';
 
 class TeamOverviewTab extends ConsumerWidget {
   final int teamId;
@@ -214,7 +216,19 @@ class _TeamInfoCard extends StatelessWidget {
                           if (info.stadiumCapacity.isNotEmpty)
                             _InfoChip(icon: Icons.people, label: '${info.stadiumCapacity} capacity'),
                           if (info.website.isNotEmpty)
-                            _InfoChip(icon: Icons.language, label: 'Website', onTap: () => launchUrl(Uri.parse(info.website), mode: LaunchMode.externalApplication)),
+                            _InfoChip(
+                              icon: Icons.language,
+                              label: 'Website',
+                              onTap: () => Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (_) => InAppBrowserScreen(
+                                    url: info.website,
+                                    title: '${info.name} Official Website',
+                                  ),
+                                ),
+                              ),
+                            ),
                         ],
                       ),
                     ),
@@ -627,7 +641,16 @@ class _HighlightsRow extends StatelessWidget {
         itemBuilder: (context, i) {
           final v = videos[i];
           return GestureDetector(
-            onTap: () => launchUrl(Uri.parse(v.url), mode: LaunchMode.externalApplication),
+            onTap: () => Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (_) => VideoPlayerScreen(
+                  videoId: v.videoId.isNotEmpty ? v.videoId : null,
+                  streamUrl: v.url.isNotEmpty ? v.url : null,
+                  title: v.title,
+                ),
+              ),
+            ),
             child: SizedBox(
               width: 200,
               child: Card(
@@ -672,7 +695,12 @@ class _NewsCard extends StatelessWidget {
     return Card(
       margin: const EdgeInsets.only(bottom: 8),
       child: InkWell(
-        onTap: () => launchUrl(Uri.parse(article.url), mode: LaunchMode.externalApplication),
+        onTap: () => Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => InAppArticleScreen(article: article),
+          ),
+        ),
         borderRadius: BorderRadius.circular(12),
         child: Padding(
           padding: const EdgeInsets.all(10),

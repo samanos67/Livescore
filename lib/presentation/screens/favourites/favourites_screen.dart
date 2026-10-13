@@ -3,36 +3,15 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../../core/constants/app_colors.dart';
-import '../../../data/datasources/local/favorites_service.dart';
 import '../../providers/team_provider.dart';
 import '../../widgets/match_card.dart';
-import '../team_detail/team_detail_screen.dart';
 import '../../../domain/entities/news_article.dart';
+import '../team_detail/team_detail_screen.dart';
+import '../common/in_app_article_screen.dart';
 
-// ─── Favourites Provider ──────────────────────────────────────────────────────
-final favoritesProvider = StateNotifierProvider<FavoritesNotifier, List<int>>((ref) {
-  return FavoritesNotifier();
-});
-
-class FavoritesNotifier extends StateNotifier<List<int>> {
-  final _svc = FavoritesService();
-
-  FavoritesNotifier() : super([]) {
-    _load();
-  }
-
-  Future<void> _load() async {
-    await _svc.init();
-    state = _svc.getFavoriteTeams();
-  }
-
-  Future<void> toggle(int teamId) async {
-    await _svc.toggleFavoriteTeam(teamId);
-    state = _svc.getFavoriteTeams();
-  }
-
-  bool isFav(int teamId) => state.contains(teamId);
-}
+import '../../providers/favorites_provider.dart';
+import '../onboarding/onboarding_screen.dart';
+export '../../providers/favorites_provider.dart';
 
 // ─── Favourites Screen ────────────────────────────────────────────────────────
 class FavouritesScreen extends ConsumerWidget {
@@ -161,10 +140,37 @@ class _EmptyState extends StatelessWidget {
             const Padding(
               padding: EdgeInsets.symmetric(horizontal: 32),
               child: Text(
-                'Tap the ♡ on any team page to follow them here and get instant match updates.',
+                'Follow your favourite clubs to get instant match updates, live scores, and news here.',
                 textAlign: TextAlign.center,
                 style: TextStyle(color: Colors.grey, fontSize: 13),
               ),
+            ),
+            const SizedBox(height: 20),
+            ElevatedButton.icon(
+              icon: const Icon(Icons.add_circle_outline, color: Colors.black),
+              label: const Text(
+                'PICK TEAMS TO FOLLOW',
+                style: TextStyle(
+                  color: Colors.black,
+                  fontWeight: FontWeight.bold,
+                  letterSpacing: 0.5,
+                ),
+              ),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.primary,
+                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => const OnboardingScreen(isInitialLaunch: false),
+                  ),
+                );
+              },
             ),
           ],
         ),
@@ -406,7 +412,12 @@ class _ArticleRow extends StatelessWidget {
     return Card(
       margin: const EdgeInsets.only(bottom: 8),
       child: InkWell(
-        onTap: () => launchUrl(Uri.parse(article.url), mode: LaunchMode.externalApplication),
+        onTap: () => Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => InAppArticleScreen(article: article),
+          ),
+        ),
         borderRadius: BorderRadius.circular(12),
         child: Padding(
           padding: const EdgeInsets.all(10),

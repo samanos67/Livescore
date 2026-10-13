@@ -21,6 +21,15 @@ class FavoritesNotifier extends StateNotifier<List<int>> {
     await _service.toggleFavoriteTeam(teamId);
     state = _service.getFavoriteTeams(); // Update state
   }
+
+  Future<void> toggle(int teamId) => toggleFavorite(teamId);
+
+  bool isFav(int teamId) => state.contains(teamId);
+
+  Future<void> addMultiple(List<int> teamIds) async {
+    await _service.addFavoriteTeams(teamIds);
+    state = _service.getFavoriteTeams();
+  }
 }
 
 final favoritesProvider = StateNotifierProvider<FavoritesNotifier, List<int>>((ref) {

@@ -192,7 +192,7 @@ class _PlayerRow extends StatelessWidget {
         },
         child: ListTile(
           contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-          leading: _PlayerAvatar(photoUrl: player.photo, number: player.number),
+          leading: _PlayerAvatar(photoUrl: player.photo, number: player.number, name: player.name),
           title: Text(
             player.name,
             style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
@@ -222,44 +222,74 @@ class _PlayerRow extends StatelessWidget {
   }
 }
 
-
 class _PlayerAvatar extends StatelessWidget {
   final String photoUrl;
   final String number;
-  const _PlayerAvatar({required this.photoUrl, required this.number});
+  final String name;
+
+  const _PlayerAvatar({
+    required this.photoUrl,
+    required this.number,
+    this.name = '',
+  });
 
   @override
   Widget build(BuildContext context) {
+    final effectiveUrl = photoUrl.isNotEmpty
+        ? photoUrl
+        : 'https://ui-avatars.com/api/?name=${Uri.encodeComponent(name.isNotEmpty ? name : "Player")}&background=1E1E1E&color=00D563&size=160&bold=true';
+
     return Stack(
       children: [
         CircleAvatar(
           radius: 24,
           backgroundColor: AppColors.secondary,
-          child: photoUrl.isNotEmpty
-              ? ClipOval(
-                  child: CachedNetworkImage(
-                    imageUrl: photoUrl,
-                    width: 48,
-                    height: 48,
-                    fit: BoxFit.cover,
-                    errorWidget: (_, __, ___) => const Icon(Icons.person, color: Colors.white60),
+          child: ClipOval(
+            child: CachedNetworkImage(
+              imageUrl: effectiveUrl,
+              width: 48,
+              height: 48,
+              fit: BoxFit.cover,
+              placeholder: (_, __) => Container(
+                color: AppColors.secondary,
+                alignment: Alignment.center,
+                child: Text(
+                  name.isNotEmpty ? name[0] : 'P',
+                  style: const TextStyle(
+                    color: AppColors.primary,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 16,
                   ),
-                )
-              : const Icon(Icons.person, color: Colors.white60),
+                ),
+              ),
+              errorWidget: (_, __, ___) => Container(
+                color: AppColors.secondary,
+                alignment: Alignment.center,
+                child: Text(
+                  name.isNotEmpty ? name[0] : 'P',
+                  style: const TextStyle(
+                    color: AppColors.primary,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 16,
+                  ),
+                ),
+              ),
+            ),
+          ),
         ),
         if (number.isNotEmpty)
           Positioned(
             bottom: 0,
             right: 0,
             child: Container(
-              padding: const EdgeInsets.all(2),
-              decoration: const BoxDecoration(
+              padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
+              decoration: BoxDecoration(
                 color: AppColors.primary,
-                shape: BoxShape.circle,
+                borderRadius: BorderRadius.circular(8),
               ),
               child: Text(
                 number,
-                style: const TextStyle(color: Colors.white, fontSize: 9, fontWeight: FontWeight.bold),
+                style: const TextStyle(color: Colors.black, fontSize: 9, fontWeight: FontWeight.bold),
               ),
             ),
           ),

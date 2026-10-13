@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:url_launcher/url_launcher.dart';
 import '../../core/constants/app_colors.dart';
+import '../screens/common/in_app_browser_screen.dart';
 
 class BroadcasterInfo {
   final String name;
@@ -129,11 +129,16 @@ class _BroadcastGuideWidgetState extends State<BroadcastGuideWidget> {
     ),
   ];
 
-  Future<void> _openBroadcaster(String url) async {
-    final uri = Uri.parse(url);
-    if (await canLaunchUrl(uri)) {
-      await launchUrl(uri, mode: LaunchMode.externalApplication);
-    }
+  void _openBroadcaster(String url) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => InAppBrowserScreen(
+          url: url,
+          title: 'Live Broadcaster',
+        ),
+      ),
+    );
   }
 
   @override

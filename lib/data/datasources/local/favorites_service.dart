@@ -33,4 +33,30 @@ class FavoritesService {
     final teams = getFavoriteTeams();
     return teams.contains(teamId);
   }
+
+  Future<void> addFavoriteTeams(List<int> newTeams) async {
+    final teams = getFavoriteTeams();
+    for (final id in newTeams) {
+      if (!teams.contains(id)) {
+        teams.add(id);
+      }
+    }
+    await _saveFavoriteTeams(teams);
+  }
+
+  bool hasCompletedOnboarding() {
+    return _box.get('has_completed_onboarding', defaultValue: false) as bool;
+  }
+
+  Future<void> setCompletedOnboarding([bool completed = true]) async {
+    await _box.put('has_completed_onboarding', completed);
+  }
+
+  bool areNotificationsEnabled() {
+    return _box.get('notifications_enabled', defaultValue: true) as bool;
+  }
+
+  Future<void> setNotificationsEnabled(bool enabled) async {
+    await _box.put('notifications_enabled', enabled);
+  }
 }

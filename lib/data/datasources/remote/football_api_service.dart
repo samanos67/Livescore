@@ -240,6 +240,21 @@ class FootballApiService {
     }
   }
 
+  // ─── Match Highlights (YouTube) ───────────────────────────────────────────
+
+  Future<List<Map<String, dynamic>>> getMatchHighlights(String query, {int limit = 4}) async {
+    try {
+      final data = await _get('/highlights', params: {'match': query, 'limit': limit});
+      final list = (data['response'] as List?) ?? [];
+      return list
+          .whereType<Map>()
+          .map((e) => Map<String, dynamic>.from(e))
+          .toList();
+    } catch (_) {
+      return [];
+    }
+  }
+
   // ─── Team Season Stats ────────────────────────────────────────────────────
 
   Future<Map<String, dynamic>?> getTeamStats(int teamId, {String season = '2024'}) async {

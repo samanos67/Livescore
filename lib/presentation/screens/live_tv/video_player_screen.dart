@@ -106,18 +106,28 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
       return;
     }
 
-    // Check if URL is an 11-char YouTube ID
-    if (url.length == 11 && !url.startsWith('http')) {
+    // Check if URL is an 11-char YouTube ID or full YouTube URL
+    String? ytId = widget.videoId;
+    if (ytId == null || ytId.isEmpty) {
+      ytId = YoutubePlayer.convertUrlToId(url);
+    }
+    if (ytId == null && url.length == 11 && !url.startsWith('http')) {
+      ytId = url;
+    }
+
+    if (ytId != null && ytId.isNotEmpty) {
       _ytController?.dispose();
       _ytController = YoutubePlayerController(
-        initialVideoId: url,
+        initialVideoId: ytId,
         flags: const YoutubePlayerFlags(
           autoPlay: true,
           mute: false,
-          isLive: true,
+          isLive: false,
+          enableCaption: false,
         ),
       );
       setState(() => _isLoading = false);
+      return;
     } else {
       _ytController?.dispose();
       _ytController = null;

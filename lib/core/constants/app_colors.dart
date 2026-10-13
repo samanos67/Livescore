@@ -10,6 +10,7 @@ class AppColors {
   
   static const Color cardBackground = Color(0xFF2A2A2A);
   static const Color surface = Color(0xFF1A1A1A);
+  static const Color background = Color(0xFF121212);
   
   // Light Mode Colors (Optional fallback/alternative)
   static const Color lightBackground = Color(0xFFF5F5F5);

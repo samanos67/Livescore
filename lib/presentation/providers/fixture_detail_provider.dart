@@ -3,6 +3,7 @@ import '../../domain/entities/statistic.dart';
 import '../../domain/entities/lineup.dart';
 import '../../domain/entities/match_event.dart';
 import '../../domain/entities/fixture.dart';
+import '../../domain/entities/video_highlight.dart';
 import '../../domain/usecases/get_fixture_statistics.dart';
 import '../../domain/usecases/get_fixture_lineups.dart';
 import '../../domain/usecases/get_fixture_events.dart';
@@ -63,5 +64,22 @@ final headToHeadProvider = FutureProvider.family<List<Fixture>, String>((ref, h2
   return result.fold(
     (failure) => throw failure.message,
     (fixtures) => fixtures,
+  );
+});
+
+// Keyed by "Home vs Away"
+final fixtureHighlightProvider =
+    FutureProvider.family<VideoHighlight?, String>((ref, matchQuery) async {
+  final api = ref.read(footballApiServiceProvider);
+  final items = await api.getMatchHighlights(matchQuery);
+  if (items.isEmpty) return null;
+  final v = items.first;
+  return VideoHighlight(
+    videoId:     v['videoId']?.toString() ?? '',
+    title:       v['title']?.toString() ?? '',
+    thumbnail:   v['thumbnail']?.toString() ?? '',
+    channel:     v['channel']?.toString() ?? '',
+    publishedAt: v['publishedAt']?.toString() ?? '',
+    url:         v['url']?.toString() ?? '',
   );
 });

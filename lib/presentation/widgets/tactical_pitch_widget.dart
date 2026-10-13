@@ -190,10 +190,13 @@ class TacticalPitchWidget extends StatelessWidget {
       }
     }
 
-    int totalExpected = lineCounts.reduce((a, b) => a + b);
-    if (totalExpected != players.length && players.length == 11) {
-      // Default to 1-4-3-3 if formation parsing doesn't match 11
+    if (lineCounts.isEmpty) {
       lineCounts = [1, 4, 3, 3];
+    } else {
+      final totalExpected = lineCounts.fold<int>(0, (a, b) => a + b);
+      if (totalExpected != players.length && players.length == 11) {
+        lineCounts = [1, 4, 3, 3];
+      }
     }
 
     final List<List<Player>> organized = [];
@@ -210,7 +213,11 @@ class TacticalPitchWidget extends StatelessWidget {
     }
     // Any remaining players
     if (playerIndex < players.length) {
-      organized.last.addAll(players.sublist(playerIndex));
+      if (organized.isNotEmpty) {
+        organized.last.addAll(players.sublist(playerIndex));
+      } else {
+        organized.add(players.sublist(playerIndex));
+      }
     }
 
     return organized;

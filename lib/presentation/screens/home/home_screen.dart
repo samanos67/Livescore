@@ -6,6 +6,8 @@ import '../../widgets/match_card.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../widgets/banner_ad_widget.dart';
 import '../../../domain/entities/fixture.dart';
+import '../search/search_screen.dart';
+import '../favourites/favourites_screen.dart';
 
 class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
@@ -140,6 +142,14 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
           ],
         ),
         actions: [
+          IconButton(
+            icon: const Icon(Icons.search),
+            tooltip: 'Search Teams & Matches',
+            onPressed: () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const SearchScreen()),
+            ),
+          ),
           IconButton(
             icon: const Icon(Icons.calendar_month),
             tooltip: 'Choose Date',
@@ -488,6 +498,49 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
             );
           }
         }
+
+        // ── Personalized Followed Clubs Section (Phase 3.1) ─────────────────
+        final favIds = ref.watch(favoritesProvider);
+        if (favIds.isNotEmpty) {
+          final favMatches = fixtures.where((f) =>
+            favIds.contains(f.homeTeam.id) || favIds.contains(f.awayTeam.id)
+          ).toList();
+
+          if (favMatches.isNotEmpty) {
+            listItems.add(
+              const Padding(
+                padding: EdgeInsets.symmetric(vertical: 8),
+                child: Row(
+                  children: [
+                    Icon(Icons.star, color: AppColors.primary, size: 16),
+                    SizedBox(width: 6),
+                    Text(
+                      'FOLLOWED CLUBS TODAY',
+                      style: TextStyle(
+                        color: AppColors.primary,
+                        fontWeight: FontWeight.bold,
+                        letterSpacing: 1,
+                        fontSize: 13,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            );
+
+            for (var f in favMatches) {
+              listItems.add(MatchCard(fixture: f));
+            }
+
+            listItems.add(
+              const Padding(
+                padding: EdgeInsets.symmetric(vertical: 10),
+                child: Divider(),
+              ),
+            );
+          }
+        }
+
 
         for (int i = 0; i < fixtures.length; i++) {
           listItems.add(MatchCard(fixture: fixtures[i]));
