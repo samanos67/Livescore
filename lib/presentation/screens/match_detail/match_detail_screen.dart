@@ -9,6 +9,8 @@ import '../live_tv/video_player_screen.dart';
 import '../../providers/favorites_provider.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../widgets/banner_ad_widget.dart';
+
 class MatchDetailScreen extends ConsumerStatefulWidget {
   final Fixture fixture;
 
@@ -89,6 +91,7 @@ class _MatchDetailScreenState extends ConsumerState<MatchDetailScreen> with Sing
           ],
         ),
       ),
+      bottomNavigationBar: const BannerAdWidget(),
       floatingActionButton: widget.fixture.isLive
           ? FloatingActionButton.extended(
               backgroundColor: Colors.redAccent,

@@ -1,6 +1,6 @@
-import 'dart:io';
+import 'package:flutter/foundation.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
-import 'package:flutter/material.dart';
+import 'admob_service.dart';
 
 class InterstitialAdService {
   InterstitialAd? _interstitialAd;
@@ -8,14 +8,7 @@ class InterstitialAdService {
   int _numInterstitialLoadAttempts = 0;
   static const int maxFailedLoadAttempts = 3;
 
-  static String get interstitialAdUnitId {
-    if (Platform.isAndroid) {
-      return 'ca-app-pub-3940256099942544/1033173712'; // Test ID
-    } else if (Platform.isIOS) {
-      return 'ca-app-pub-3940256099942544/4411468910'; // Test ID
-    }
-    return '';
-  }
+  static String get interstitialAdUnitId => AdMobService.interstitialAdUnitId;
 
   void loadAd() {
     InterstitialAd.load(
@@ -63,14 +56,61 @@ class InterstitialAdService {
     );
   }
 
-  void showAd() {
-    if (_isAdLoaded && _interstitialAd != null) {
+  int _actionCount = 0;
+  DateTime? _lastAdShownTime;
+
+  void showAd({VoidCallback? onDismissed}) {
+    if (_isLoaded && _interstitialAd != null) {
+      _interstitialAd!.fullScreenContentCallback = FullScreenContentCallback(
+        onAdShowedFullScreenContent: (ad) {
+          debugPrint('Interstitial ad showed');
+          _lastAdShownTime = DateTime.now();
+        },
+        onAdDismissedFullScreenContent: (ad) {
+          debugPrint('Interstitial ad dismissed');
+          ad.dispose();
+          _isAdLoaded = false;
+          _interstitialAd = null;
+          loadAd();
+          onDismissed?.call();
+        },
+        onAdFailedToShowFullScreenContent: (ad, error) {
+          debugPrint('Interstitial ad failed to show: $error');
+          ad.dispose();
+          _isAdLoaded = false;
+          _interstitialAd = null;
+          loadAd();
+          onDismissed?.call();
+        },
+      );
       _interstitialAd!.show();
     } else {
       debugPrint('Interstitial ad not ready yet');
       loadAd();
+      onDismissed?.call();
     }
   }
+
+  /// Shows the interstitial ad only every [interval] user actions
+  /// and respects a minimum cooldown of [cooldown] (default 2.5 minutes)
+  void showAdWithFrequencyCap({
+    int interval = 4,
+    Duration cooldown = const Duration(seconds: 150),
+    VoidCallback? onDismissed,
+  }) {
+    _actionCount++;
+    final now = DateTime.now();
+    final timePassed = _lastAdShownTime == null || now.difference(_lastAdShownTime!) >= cooldown;
+
+    if (_actionCount >= interval && timePassed && _isAdLoaded) {
+      _actionCount = 0;
+      showAd(onDismissed: onDismissed);
+    } else {
+      onDismissed?.call();
+    }
+  }
+
+  bool get _isLoaded => _isAdLoaded && _interstitialAd != null;
 
   void dispose() {
     _interstitialAd?.dispose();

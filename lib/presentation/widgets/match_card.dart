@@ -4,6 +4,7 @@ import 'package:intl/intl.dart';
 import '../../domain/entities/fixture.dart';
 import '../../core/constants/app_colors.dart';
 import '../screens/match_detail/match_detail_screen.dart';
+import '../../main.dart';
 
 class MatchCard extends StatelessWidget {
   final Fixture fixture;
@@ -23,9 +24,13 @@ class MatchCard extends StatelessWidget {
         child: InkWell(
           borderRadius: BorderRadius.circular(12),
           onTap: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(builder: (_) => MatchDetailScreen(fixture: fixture)),
+            interstitialAdService.showAdWithFrequencyCap(
+              onDismissed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => MatchDetailScreen(fixture: fixture)),
+                );
+              },
             );
           },
           child: Padding(

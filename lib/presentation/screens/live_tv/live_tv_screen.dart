@@ -5,6 +5,7 @@ import 'package:url_launcher/url_launcher.dart';
 import '../../providers/stream_provider.dart';
 import 'video_player_screen.dart';
 import '../../../core/constants/app_colors.dart';
+import '../../widgets/banner_ad_widget.dart';
 
 class LiveTvScreen extends ConsumerStatefulWidget {
   const LiveTvScreen({super.key});
@@ -126,6 +127,7 @@ class _LiveTvScreenState extends ConsumerState<LiveTvScreen> {
         ),
         onPressed: () => _showAddStreamDialog(context),
       ),
+      bottomNavigationBar: const BannerAdWidget(),
       body: streamsAsync.when(
         data: (streams) {
           if (streams.isEmpty) {

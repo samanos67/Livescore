@@ -5,13 +5,13 @@ import 'data/datasources/local/favorites_service.dart';
 import 'services/notification_service.dart';
 import 'services/admob_service.dart';
 import 'services/interstitial_ad_service.dart';
-import 'services/app_open_ad_service.dart';
+import 'services/rewarded_ad_service.dart';
 
 import 'presentation/screens/splash/splash_screen.dart';
 
 // Global ad services
 final interstitialAdService = InterstitialAdService();
-final appOpenAdService = AppOpenAdService();
+final rewardedAdService = RewardedAdService();
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -20,9 +20,10 @@ void main() async {
   await NotificationService().init();
   await AdMobService().init();
   
-  // Load ads
+  // Preload ads
   interstitialAdService.loadAd();
-  appOpenAdService.loadAd();
+  rewardedAdService.loadRewardedAd();
+  rewardedAdService.loadRewardedInterstitialAd();
   
   runApp(const ProviderScope(child: LiveScoreApp()));
 }

@@ -5,6 +5,8 @@ import 'package:url_launcher/url_launcher.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../domain/entities/live_stream_channel.dart';
 import '../../widgets/broadcast_guide_widget.dart';
+import '../../widgets/banner_ad_widget.dart';
+import '../../../main.dart';
 
 class VideoPlayerScreen extends StatefulWidget {
   final String? videoId;
@@ -495,6 +497,61 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
                         ],
                       ),
                     ),
+                    const SizedBox(height: 14),
+
+                    // Voluntary Rewarded Ad Sponsor Card (High eCPM, 100% voluntary)
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          colors: [AppColors.primary.withOpacity(0.15), AppColors.secondary],
+                        ),
+                        borderRadius: BorderRadius.circular(10),
+                        border: Border.all(color: AppColors.primary.withOpacity(0.3)),
+                      ),
+                      child: Row(
+                        children: [
+                          const Icon(Icons.star, color: AppColors.primary, size: 24),
+                          const SizedBox(width: 10),
+                          const Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  'Support Live Broadcasts',
+                                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Colors.white),
+                                ),
+                                Text(
+                                  'Watch a quick sponsor clip to keep live streams running free!',
+                                  style: TextStyle(color: Colors.grey, fontSize: 11),
+                                ),
+                              ],
+                            ),
+                          ),
+                          ElevatedButton(
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: AppColors.primary,
+                              foregroundColor: Colors.black,
+                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                              textStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 11),
+                            ),
+                            onPressed: () {
+                              rewardedAdService.showRewardedAd(
+                                onRewardEarned: () {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    const SnackBar(
+                                      content: Text('🎉 Thank you for supporting free match streaming!'),
+                                      backgroundColor: AppColors.primary,
+                                    ),
+                                  );
+                                },
+                              );
+                            },
+                            child: const Text('WATCH'),
+                          ),
+                        ],
+                      ),
+                    ),
                   ],
                 ),
               ),
@@ -502,6 +559,7 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
           ],
         ],
       ),
+      bottomNavigationBar: const BannerAdWidget(),
     );
   }
 }

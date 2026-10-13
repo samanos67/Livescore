@@ -11,6 +11,7 @@ import '../common/in_app_article_screen.dart';
 
 import '../../providers/favorites_provider.dart';
 import '../onboarding/onboarding_screen.dart';
+import '../../widgets/banner_ad_widget.dart';
 export '../../providers/favorites_provider.dart';
 
 // ─── Favourites Screen ────────────────────────────────────────────────────────
@@ -50,6 +51,7 @@ class FavouritesScreen extends ConsumerWidget {
           ),
         ],
       ),
+      bottomNavigationBar: const BannerAdWidget(),
       body: favIds.isEmpty
           ? const _EmptyState()
           : RefreshIndicator(
