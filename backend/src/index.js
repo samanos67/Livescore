@@ -504,15 +504,18 @@ app.get('/standings/:leagueId/:season', async (req, res) => {
 // Returns team info: bio, stadium, manager, colours, formed, logo, country
 // Source: TheSportsDB (free, unlimited)
 // ─────────────────────────────────────────────────────────────────────────────
+// GET /teams/:teamId
+// Returns team info: bio, stadium, manager, colours, formed, logo, country
+// Source: TheSportsDB (mapped) → Football-Data.org + TheSportsDB search
+// ─────────────────────────────────────────────────────────────────────────────
 app.get('/teams/:teamId', async (req, res) => {
   const teamId   = parseInt(req.params.teamId);
   const cacheKey = `team_${teamId}`;
   const cached   = getCached(cacheKey);
   if (cached) return res.json({ response: cached, source: 'cache' });
 
-  // Determine TheSportsDB ID
+  // 1. Try TheSportsDB mapped ID
   const tsdbId = TEAM_MAP_TSDB[teamId];
-
   if (tsdbId) {
     try {
       const r    = await sportsDbClient.get('/lookupteam.php', { params: { id: tsdbId } });
@@ -548,7 +551,59 @@ app.get('/teams/:teamId', async (req, res) => {
     } catch (e) { console.warn('[team] TSDB lookup failed:', e.message); }
   }
 
-  // Fallback: return basic info from API-Football if we have quota
+  // 2. Try Football-Data.org /teams/:teamId
+  let fdTeam = null;
+  try {
+    const r = await footballDataClient.get(`/teams/${teamId}`);
+    fdTeam = r.data;
+  } catch (_) {}
+
+  if (fdTeam) {
+    let tsdbExtra = null;
+    const searchName = fdTeam.shortName || fdTeam.name;
+    if (searchName) {
+      try {
+        const cleanName = encodeURIComponent(searchName.replace(/\s+(FC|AFC|CF|Calcio|BC)\b/gi, '').trim());
+        const tr = await sportsDbClient.get(`/searchteams.php?t=${cleanName}`);
+        tsdbExtra = tr.data?.teams?.[0];
+      } catch (_) {}
+    }
+
+    const colours = (fdTeam.clubColors ?? '')
+      .split('/')
+      .map(c => c.trim().toLowerCase())
+      .filter(Boolean);
+
+    const data = {
+      id:          teamId,
+      tsdbId:      tsdbExtra?.idTeam ?? null,
+      name:        fdTeam.name ?? '',
+      shortName:   fdTeam.shortName ?? '',
+      logo:        fdTeam.crest ?? tsdbExtra?.strTeamBadge ?? '',
+      banner:      tsdbExtra?.strTeamBanner ?? '',
+      jersey:      tsdbExtra?.strTeamJersey ?? '',
+      stadium:     fdTeam.venue ?? tsdbExtra?.strStadium ?? '',
+      stadiumCapacity: tsdbExtra?.intStadiumCapacity ?? '',
+      stadiumLocation: tsdbExtra?.strStadiumLocation ?? '',
+      stadiumImage:    tsdbExtra?.strStadiumThumb ?? '',
+      city:        tsdbExtra?.strCity ?? fdTeam.address ?? '',
+      country:     tsdbExtra?.strCountry ?? '',
+      founded:     fdTeam.founded ? `${fdTeam.founded}` : (tsdbExtra?.intFormedYear ?? ''),
+      manager:     fdTeam.coach?.name ?? tsdbExtra?.strManager ?? '',
+      description: tsdbExtra?.strDescriptionEN ?? `${fdTeam.name} is a professional football club founded in ${fdTeam.founded || 'the past'}. Venue: ${fdTeam.venue || 'Home Stadium'}.`,
+      website:     fdTeam.website ?? tsdbExtra?.strWebsite ?? '',
+      facebook:    tsdbExtra?.strFacebook ?? '',
+      twitter:     tsdbExtra?.strTwitter ?? '',
+      instagram:   tsdbExtra?.strInstagram ?? '',
+      youtube:     tsdbExtra?.strYoutube ?? '',
+      colours:     colours.length > 0 ? colours : (tsdbExtra?.strColour1 ? [tsdbExtra.strColour1, tsdbExtra.strColour2].filter(Boolean) : ['#E10600', '#FFFFFF']),
+    };
+
+    setCache(cacheKey, data, TTL.TEAM);
+    return res.json({ response: data, source: 'football-data+thesportsdb' });
+  }
+
+  // 3. Fallback: API-Football if available
   try {
     const r    = await apiFootballClient.get('/teams', { params: { id: teamId } });
     const team = r.data?.response?.[0];
@@ -576,7 +631,7 @@ app.get('/teams/:teamId', async (req, res) => {
 // ─────────────────────────────────────────────────────────────────────────────
 // GET /teams/:teamId/squad
 // Returns full squad with player photos, positions, nationality, age
-// Source: TheSportsDB lookup_all_players (free)
+// Source: TheSportsDB lookup_all_players → Football-Data.org /teams/:id squad
 // ─────────────────────────────────────────────────────────────────────────────
 app.get('/teams/:teamId/squad', async (req, res) => {
   const teamId   = parseInt(req.params.teamId);
@@ -584,8 +639,8 @@ app.get('/teams/:teamId/squad', async (req, res) => {
   const cached   = getCached(cacheKey);
   if (cached) return res.json({ response: cached, source: 'cache' });
 
+  // 1. Try TheSportsDB mapped ID
   const tsdbId = TEAM_MAP_TSDB[teamId];
-
   if (tsdbId) {
     try {
       const r       = await sportsDbClient.get('/lookup_all_players.php', { params: { id: tsdbId } });
@@ -609,7 +664,29 @@ app.get('/teams/:teamId/squad', async (req, res) => {
     } catch (e) { console.warn('[squad] TSDB failed:', e.message); }
   }
 
-  // Fallback: API-Football squad
+  // 2. Try Football-Data.org /teams/:teamId (full official squad)
+  try {
+    const r = await footballDataClient.get(`/teams/${teamId}`);
+    const squad = r.data?.squad ?? [];
+    if (squad.length > 0) {
+      const data = squad.map(p => ({
+        id:          p.id ?? 0,
+        name:        p.name ?? '',
+        photo:       '',
+        position:    p.position ?? 'Midfield',
+        nationality: p.nationality ?? '',
+        birthDate:   p.dateOfBirth ?? '',
+        number:      p.shirtNumber ? `${p.shirtNumber}` : '',
+        height:      '',
+        weight:      '',
+        description: `${p.name} is a ${p.nationality || ''} professional footballer playing as ${p.position || 'player'} for ${r.data?.shortName || r.data?.name}.`,
+      }));
+      setCache(cacheKey, data, TTL.SQUAD);
+      return res.json({ response: data, source: 'football-data.org' });
+    }
+  } catch (e) { console.warn('[squad] FD failed:', e.message); }
+
+  // 3. Fallback: API-Football squad
   try {
     const r       = await apiFootballClient.get('/players/squads', { params: { team: teamId } });
     const players = r.data?.response?.[0]?.players ?? [];
@@ -620,7 +697,7 @@ app.get('/teams/:teamId/squad', async (req, res) => {
       position:    p.position ?? '',
       nationality: '',
       birthDate:   '',
-      number:      p.number ?? '',
+      number:      p.number ? `${p.number}` : '',
       height:      '',
       weight:      '',
       description: '',
@@ -632,6 +709,7 @@ app.get('/teams/:teamId/squad', async (req, res) => {
     res.status(500).json({ error: 'Failed to fetch squad', message: err.message });
   }
 });
+
 
 // ─────────────────────────────────────────────────────────────────────────────
 // GET /teams/:teamId/fixtures?season=2024

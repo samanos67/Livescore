@@ -117,7 +117,11 @@ class _TeamDetailScreenState extends ConsumerState<TeamDetailScreen>
               children: [
                 TeamOverviewTab(teamId: widget.teamId, teamName: widget.teamName),
                 TeamFixturesTab(teamId: widget.teamId),
-                TeamSquadTab(teamId: widget.teamId),
+                TeamSquadTab(
+                  teamId: widget.teamId,
+                  teamName: widget.teamName,
+                  teamLogo: widget.teamLogo,
+                ),
                 TeamStatsTab(teamId: widget.teamId),
               ],
             ),

@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../providers/team_provider.dart';
-import '../../../providers/fixture_provider.dart';
 
 class TeamStatsTab extends ConsumerWidget {
   final int teamId;

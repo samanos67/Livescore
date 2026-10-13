@@ -5,10 +5,19 @@ import '../../../../core/constants/app_colors.dart';
 import '../../../providers/team_provider.dart';
 import '../../../../domain/entities/player.dart';
 
+import '../../player_detail/player_detail_screen.dart';
+
 class TeamSquadTab extends ConsumerWidget {
   final int teamId;
+  final String teamName;
+  final String teamLogo;
 
-  const TeamSquadTab({super.key, required this.teamId});
+  const TeamSquadTab({
+    super.key,
+    required this.teamId,
+    this.teamName = '',
+    this.teamLogo = '',
+  });
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -44,7 +53,11 @@ class TeamSquadTab extends ConsumerWidget {
             ),
           );
         }
-        return _SquadList(players: players);
+        return _SquadList(
+          players: players,
+          teamName: teamName,
+          teamLogo: teamLogo,
+        );
       },
     );
   }
@@ -52,7 +65,14 @@ class TeamSquadTab extends ConsumerWidget {
 
 class _SquadList extends StatelessWidget {
   final List<Player> players;
-  const _SquadList({required this.players});
+  final String teamName;
+  final String teamLogo;
+
+  const _SquadList({
+    required this.players,
+    this.teamName = '',
+    this.teamLogo = '',
+  });
 
   static const _positionOrder = ['Goalkeeper', 'Defender', 'Midfielder', 'Forward'];
 
@@ -92,7 +112,13 @@ class _SquadList extends StatelessWidget {
       children: [
         for (final entry in grouped.entries) ...[
           _PositionHeader(title: entry.key, count: entry.value.length),
-          ...entry.value.map((p) => _PlayerRow(player: p)),
+          ...entry.value.map(
+            (p) => _PlayerRow(
+              player: p,
+              teamName: teamName,
+              teamLogo: teamLogo,
+            ),
+          ),
           const SizedBox(height: 8),
         ],
       ],
@@ -137,36 +163,65 @@ class _PositionHeader extends StatelessWidget {
 
 class _PlayerRow extends StatelessWidget {
   final Player player;
-  const _PlayerRow({required this.player});
+  final String teamName;
+  final String teamLogo;
+
+  const _PlayerRow({
+    required this.player,
+    this.teamName = '',
+    this.teamLogo = '',
+  });
 
   @override
   Widget build(BuildContext context) {
     return Card(
       margin: const EdgeInsets.symmetric(vertical: 3),
-      child: ListTile(
-        contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-        leading: _PlayerAvatar(photoUrl: player.photo, number: player.number),
-        title: Text(
-          player.name,
-          style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
-        ),
-        subtitle: Row(
-          children: [
-            if (player.nationality.isNotEmpty) ...[
-              Text(player.nationality, style: const TextStyle(fontSize: 12, color: Colors.grey)),
-              const SizedBox(width: 8),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(12),
+        onTap: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (_) => PlayerDetailScreen(
+                player: player,
+                teamName: teamName,
+                teamLogo: teamLogo,
+              ),
+            ),
+          );
+        },
+        child: ListTile(
+          contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+          leading: _PlayerAvatar(photoUrl: player.photo, number: player.number),
+          title: Text(
+            player.name,
+            style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
+          ),
+          subtitle: Row(
+            children: [
+              if (player.nationality.isNotEmpty) ...[
+                Text(player.nationality, style: const TextStyle(fontSize: 12, color: Colors.grey)),
+                const SizedBox(width: 8),
+              ],
+              if (player.age > 0)
+                Text('${player.age} yrs', style: const TextStyle(fontSize: 12, color: Colors.grey)),
             ],
-            if (player.age > 0)
-              Text('${player.age} yrs', style: const TextStyle(fontSize: 12, color: Colors.grey)),
-          ],
+          ),
+          trailing: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              if (player.height.isNotEmpty)
+                Text(player.height, style: const TextStyle(fontSize: 12, color: Colors.grey)),
+              const SizedBox(width: 6),
+              const Icon(Icons.chevron_right, size: 18, color: Colors.white38),
+            ],
+          ),
         ),
-        trailing: player.height.isNotEmpty
-            ? Text(player.height, style: const TextStyle(fontSize: 12, color: Colors.grey))
-            : null,
       ),
     );
   }
 }
+
 
 class _PlayerAvatar extends StatelessWidget {
   final String photoUrl;
