@@ -9,6 +9,7 @@ import 'tabs/h2h_tab.dart';
 import '../live_tv/video_player_screen.dart';
 import '../../providers/favorites_provider.dart';
 import '../../providers/fixture_detail_provider.dart';
+import '../../../services/notification_service.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../widgets/banner_ad_widget.dart';
@@ -89,8 +90,35 @@ class _MatchDetailScreenState extends ConsumerState<MatchDetailScreen> with Sing
           IconButton(
             icon: Icon(isFavorite ? Icons.star : Icons.star_border),
             color: isFavorite ? AppColors.primary : Colors.grey,
+            tooltip: isFavorite ? 'Remove reminder' : 'Set kickoff reminder',
             onPressed: () {
               ref.read(favoritesProvider.notifier).toggleFavorite(widget.fixture.homeTeam.id);
+              final willBeFav = !isFavorite;
+              if (willBeFav) {
+                if (!widget.fixture.isLive && !widget.fixture.isFinished) {
+                  NotificationService().scheduleMatchKickoffReminder(
+                    matchId: widget.fixture.id,
+                    homeTeam: widget.fixture.homeTeam.name,
+                    awayTeam: widget.fixture.awayTeam.name,
+                    kickoffTime: widget.fixture.date,
+                  );
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text('Match reminder set for ${widget.fixture.homeTeam.name} vs ${widget.fixture.awayTeam.name}!'),
+                      duration: const Duration(seconds: 2),
+                    ),
+                  );
+                } else {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text('Added ${widget.fixture.homeTeam.name} to favorites'),
+                      duration: const Duration(seconds: 2),
+                    ),
+                  );
+                }
+              } else {
+                NotificationService().cancelMatchReminder(widget.fixture.id);
+              }
             },
           ),
         ],

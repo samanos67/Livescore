@@ -8,6 +8,7 @@ import '../../data/repositories/football_repository_impl.dart';
 import '../../data/datasources/remote/football_api_service.dart';
 import '../../data/datasources/remote/the_sports_db_service.dart';
 import 'package:dio/dio.dart';
+import '../../services/notification_service.dart';
 
 // ─── Dependency Injection ─────────────────────────────────────────────────────
 
@@ -51,6 +52,7 @@ final liveFixturesProvider =
 class FixtureNotifier extends StateNotifier<AsyncValue<List<Fixture>>> {
   final GetLiveFixtures getLiveFixtures;
   Timer? _autoRefreshTimer;
+  final Map<int, String> _lastKnownScores = {};
 
   // Auto-refresh interval: 15 seconds during live matches for instant score updates
   static const Duration _refreshInterval = Duration(seconds: 15);
@@ -82,7 +84,33 @@ class FixtureNotifier extends StateNotifier<AsyncValue<List<Fixture>>> {
           state = AsyncValue.error(failure.message, StackTrace.current);
         }
       },
-      (fixtures) => state = AsyncValue.data(fixtures),
+      (fixtures) {
+        // Detect in-play goal events and trigger instant notifications
+        if (_lastKnownScores.isNotEmpty) {
+          for (final f in fixtures) {
+            final oldScore = _lastKnownScores[f.id];
+            final newScore = '${f.goalsHome ?? 0}-${f.goalsAway ?? 0}';
+            if (oldScore != null && oldScore != newScore && f.isLive) {
+              NotificationService().showGoalAlert(
+                matchId: f.id,
+                homeTeam: f.homeTeam.name,
+                awayTeam: f.awayTeam.name,
+                scorerName: 'Live Goal',
+                minute: f.elapsed ?? 0,
+                homeScore: f.goalsHome ?? 0,
+                awayScore: f.goalsAway ?? 0,
+              );
+            }
+          }
+        }
+
+        // Cache latest score snapshots
+        for (final f in fixtures) {
+          _lastKnownScores[f.id] = '${f.goalsHome ?? 0}-${f.goalsAway ?? 0}';
+        }
+
+        state = AsyncValue.data(fixtures);
+      },
     );
   }
 
