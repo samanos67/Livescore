@@ -78,7 +78,20 @@ class _InAppArticleScreenState extends State<InAppArticleScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, result) async {
+        if (didPop) return;
+        if (await _controller.canGoBack()) {
+          _controller.goBack();
+        } else {
+          if (context.mounted) {
+            Navigator.pop(context);
+          }
+        }
+      },
+      child: Scaffold(
+        backgroundColor: AppColors.background,
       appBar: AppBar(
         title: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -120,6 +133,7 @@ class _InAppArticleScreenState extends State<InAppArticleScreen> {
             : null,
       ),
       body: WebViewWidget(controller: _controller),
-    );
+    ),
+  );
   }
 }

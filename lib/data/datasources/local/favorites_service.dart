@@ -2,6 +2,7 @@ import 'package:hive_flutter/hive_flutter.dart';
 
 class FavoritesService {
   static const String boxName = 'favorites';
+  static const String _onboardingKey = 'has_completed_club_selection_flow_v2';
   
   Future<void> init() async {
     await Hive.initFlutter();
@@ -11,7 +12,6 @@ class FavoritesService {
   Box get _box => Hive.box(boxName);
 
   List<int> getFavoriteTeams() {
-    // Storing as List<int>
     return _box.get('teams', defaultValue: <int>[])!.cast<int>();
   }
 
@@ -45,11 +45,16 @@ class FavoritesService {
   }
 
   bool hasCompletedOnboarding() {
-    return _box.get('has_completed_onboarding', defaultValue: false) as bool;
+    return _box.get(_onboardingKey, defaultValue: false) as bool;
   }
 
   Future<void> setCompletedOnboarding([bool completed = true]) async {
-    await _box.put('has_completed_onboarding', completed);
+    await _box.put(_onboardingKey, completed);
+  }
+
+  Future<void> resetOnboarding() async {
+    await _box.put(_onboardingKey, false);
+    await _box.delete('teams');
   }
 
   bool areNotificationsEnabled() {

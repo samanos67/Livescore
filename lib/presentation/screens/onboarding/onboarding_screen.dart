@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import '../../../core/constants/app_colors.dart';
@@ -21,6 +22,41 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
   String _selectedLeague = 'All';
   String _searchQuery = '';
   final TextEditingController _searchController = TextEditingController();
+  DateTime? _lastBackPressTime;
+
+  void _handleBackPress() {
+    if (!widget.isInitialLaunch) {
+      Navigator.pop(context);
+      return;
+    }
+
+    final now = DateTime.now();
+    if (_lastBackPressTime == null ||
+        now.difference(_lastBackPressTime!) > const Duration(seconds: 2)) {
+      _lastBackPressTime = now;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const Row(
+            children: [
+              Icon(Icons.touch_app, color: AppColors.primary, size: 18),
+              SizedBox(width: 8),
+              Text(
+                'Press back again to exit LiveScore',
+                style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
+              ),
+            ],
+          ),
+          duration: const Duration(seconds: 2),
+          backgroundColor: AppColors.secondary,
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+        ),
+      );
+      return;
+    }
+
+    SystemNavigator.pop();
+  }
 
   static const List<Map<String, dynamic>> _topClubs = [
     // Premier League
@@ -152,8 +188,14 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
       return matchesLeague && matchesSearch;
     }).toList();
 
-    return Scaffold(
-      backgroundColor: AppColors.background,
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, result) {
+        if (didPop) return;
+        _handleBackPress();
+      },
+      child: Scaffold(
+        backgroundColor: AppColors.background,
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
@@ -423,7 +465,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                   child: Text(
                     _selectedIds.isEmpty
                         ? 'SELECT CLUBS TO CONTINUE'
-                        : 'FOLLOW (${_selectedIds.length}) CLUBS',
+                        : 'CONTINUE TO APP (${_selectedIds.length} CLUBS)',
                     style: const TextStyle(
                       fontSize: 14,
                       fontWeight: FontWeight.bold,
@@ -436,6 +478,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
           ],
         ),
       ),
-    );
+    ),
+  );
   }
 }
