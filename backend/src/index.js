@@ -4,6 +4,7 @@ const cors      = require('cors');
 const axios     = require('axios');
 const NodeCache = require('node-cache');
 const RSSParser = require('rss-parser');
+const espnService = require('./espnService');
 
 const app    = express();
 const PORT   = process.env.PORT || 3000;
@@ -339,7 +340,7 @@ async function preloadAllFixtures() {
 
 // ─────────────────────────────────────────────────────────────────────────────
 // GET /fixtures/live
-// Source: Football-Data.org /matches (all today in 1 call) → fallback API-Football
+// Source: Open World Live Feed (Real-Time) → Football-Data.org → API-Football
 // ─────────────────────────────────────────────────────────────────────────────
 app.get('/fixtures/live', async (req, res) => {
   const cacheKey = 'live_fixtures';
@@ -347,21 +348,41 @@ app.get('/fixtures/live', async (req, res) => {
   if (cached) return res.json({ response: cached, source: 'cache' });
 
   try {
-    // 1. Try Football-Data.org today matches
+    // 1. Try Open World Live Feed (Instant real-time scores, minutes, goals)
+    try {
+      const espnLive = await espnService.getLiveFixtures();
+      if (espnLive && espnLive.length > 0) {
+        for (const f of espnLive) {
+          MATCH_LOOKUP.set(Number(f.fixture.id), f);
+        }
+        setCache(cacheKey, espnLive, 15); // Fast 15s refresh for instant scores
+        return res.json({ response: espnLive, source: 'open-live-feed', count: espnLive.length });
+      }
+    } catch (e) {
+      console.warn('[live] ESPN live check error:', e.message);
+    }
+
+    // 2. Try Football-Data.org today matches
     const r = await footballDataClient.get('/matches').catch(() => null);
     if (r?.data?.matches) {
       const live = r.data.matches
         .filter(m => ['IN_PLAY', 'PAUSED', 'HALF_TIME'].includes(m.status))
         .map(normalizeFDFixture);
       if (live.length > 0) {
+        for (const f of live) {
+          MATCH_LOOKUP.set(Number(f.fixture.id), f);
+        }
         setCache(cacheKey, live, TTL.LIVE);
         return res.json({ response: live, source: 'football-data.org' });
       }
     }
 
-    // 2. Fallback: API-Football live
+    // 3. Fallback: API-Football live
     const fb   = await apiFootballClient.get('/fixtures', { params: { live: 'all' } }).catch(() => null);
     const data = fb?.data?.response ?? [];
+    for (const f of data) {
+      if (f.fixture?.id) MATCH_LOOKUP.set(Number(f.fixture.id), f);
+    }
     setCache(cacheKey, data, TTL.LIVE);
     return res.json({ response: data, source: 'api-football-fallback' });
   } catch (err) {
@@ -372,7 +393,7 @@ app.get('/fixtures/live', async (req, res) => {
 
 // ─────────────────────────────────────────────────────────────────────────────
 // GET /fixtures/date/:date   (yyyy-MM-dd)
-// Source: In-memory season cache → TheSportsDB eventsday → fallback API-Football
+// Source: Open World Feed (Full Day) → Season Cache → TSDB → API-Football
 // ─────────────────────────────────────────────────────────────────────────────
 app.get('/fixtures/date/:date', async (req, res) => {
   const { date }  = req.params;
@@ -381,21 +402,41 @@ app.get('/fixtures/date/:date', async (req, res) => {
   if (cached) return res.json({ response: cached, source: 'cache' });
 
   try {
-    // 1. Check in-memory season fixtures
+    // 1. Try Open World Feed for full daily fixture list
+    try {
+      const espnMatches = await espnService.getFixturesByDate(date);
+      if (espnMatches && espnMatches.length > 0) {
+        for (const f of espnMatches) {
+          MATCH_LOOKUP.set(Number(f.fixture.id), f);
+        }
+        setCache(cacheKey, espnMatches, TTL.FIXTURES);
+        return res.json({ response: espnMatches, source: 'open-live-feed', count: espnMatches.length });
+      }
+    } catch (e) {
+      console.warn(`[date] ESPN daily fixtures failed for ${date}:`, e.message);
+    }
+
+    // 2. Check in-memory season fixtures
     if (ALL_SEASON_FIXTURES.length > 0) {
       const matched = ALL_SEASON_FIXTURES.filter(f => f.fixture?.date?.slice(0, 10) === date);
       if (matched.length > 0) {
+        for (const f of matched) {
+          MATCH_LOOKUP.set(Number(f.fixture.id), f);
+        }
         setCache(cacheKey, matched, TTL.FIXTURES);
         return res.json({ response: matched, source: 'football-data-season-cache', count: matched.length });
       }
     }
 
-    // 2. If date has no domestic league games, fetch world soccer from TheSportsDB
+    // 3. TheSportsDB eventsday
     try {
       const tsdbRes = await sportsDbClient.get('/eventsday.php', { params: { d: date, s: 'Soccer' } });
       const events = tsdbRes.data?.events ?? [];
       if (events.length > 0) {
         const normalized = events.map(normalizeTSDBEvent);
+        for (const f of normalized) {
+          MATCH_LOOKUP.set(Number(f.fixture.id), f);
+        }
         setCache(cacheKey, normalized, TTL.FIXTURES);
         return res.json({ response: normalized, source: 'thesportsdb-eventsday', count: normalized.length });
       }
@@ -403,24 +444,12 @@ app.get('/fixtures/date/:date', async (req, res) => {
       console.warn(`[date] TSDB eventsday failed for ${date}:`, e.message);
     }
 
-    // 3. Fallback: Football-Data.org /competitions/PL/matches?dateFrom=...
-    try {
-      const fd = await footballDataClient.get('/competitions/PL/matches', {
-        params: { dateFrom: date, dateTo: date }
-      });
-      const matches = fd.data?.matches ?? [];
-      if (matches.length > 0) {
-        const normalized = matches.map(normalizeFDFixture);
-        setCache(cacheKey, normalized, TTL.FIXTURES);
-        return res.json({ response: normalized, source: 'football-data.org', count: normalized.length });
-      }
-    } catch (e) {
-      console.warn(`[date] FD PL failed for ${date}:`, e.message);
-    }
-
     // 4. Fallback: API-Football
     const fb   = await apiFootballClient.get('/fixtures', { params: { date } }).catch(() => null);
     const data = fb?.data?.response ?? [];
+    for (const f of data) {
+      if (f.fixture?.id) MATCH_LOOKUP.set(Number(f.fixture.id), f);
+    }
     setCache(cacheKey, data, TTL.FIXTURES);
     return res.json({ response: data, source: 'api-football-fallback', count: data.length });
   } catch (err) {
@@ -1062,6 +1091,26 @@ async function findMatch(fixtureId) {
   const numId = Number(fixtureId);
   if (MATCH_LOOKUP.has(numId)) return MATCH_LOOKUP.get(numId);
 
+  // Try ESPN match summary
+  try {
+    const summary = await espnService.getMatchSummary(fixtureId);
+    if (summary && summary.header) {
+      const comp = summary.header.competitions?.[0];
+      if (comp) {
+        const ev = {
+          id: fixtureId,
+          date: comp.date,
+          status: comp.status,
+          competitions: [comp],
+          season: summary.header.season,
+        };
+        const f = espnService.normalizeEspnEvent(ev);
+        MATCH_LOOKUP.set(numId, f);
+        return f;
+      }
+    }
+  } catch (_) {}
+
   // Try Football-Data /matches/:id
   try {
     const r = await footballDataClient.get(`/matches/${fixtureId}`);
@@ -1173,6 +1222,8 @@ function buildTacticalLineup(team, squadInfo) {
 
 // ─────────────────────────────────────────────────────────────────────────────
 // GET /fixtures/:fixtureId/statistics
+// ─────────────────────────────────────────────────────────────────────────────
+// GET /fixtures/:fixtureId/statistics
 // Formatted as flat array of { team: { id, name, logo }, type, value }
 // ─────────────────────────────────────────────────────────────────────────────
 app.get('/fixtures/:fixtureId/statistics', async (req, res) => {
@@ -1182,6 +1233,20 @@ app.get('/fixtures/:fixtureId/statistics', async (req, res) => {
   if (cached) return res.json({ response: cached, source: 'cache' });
 
   try {
+    // 1. Try real ESPN boxscore statistics first
+    try {
+      const summary = await espnService.getMatchSummary(fixtureId);
+      if (summary) {
+        const realStats = espnService.extractStatistics(summary);
+        if (realStats && realStats.length > 0) {
+          setCache(cacheKey, realStats, TTL.STATS);
+          return res.json({ response: realStats, source: 'open-live-boxscore' });
+        }
+      }
+    } catch (e) {
+      console.warn(`[stats] ESPN summary stats failed for ${fixtureId}:`, e.message);
+    }
+
     const match = await findMatch(fixtureId);
     if (match) {
       const homeTeam = match.teams?.home;
@@ -1272,6 +1337,20 @@ app.get('/fixtures/:fixtureId/lineups', async (req, res) => {
   if (cached) return res.json({ response: cached, source: 'cache' });
 
   try {
+    // 1. Try real ESPN rosters first
+    try {
+      const summary = await espnService.getMatchSummary(fixtureId);
+      if (summary) {
+        const realLineups = espnService.extractLineups(summary);
+        if (realLineups && realLineups.length > 0 && (realLineups[0]?.startXI?.length > 0 || realLineups[1]?.startXI?.length > 0)) {
+          setCache(cacheKey, realLineups, TTL.LINEUPS);
+          return res.json({ response: realLineups, source: 'open-live-rosters' });
+        }
+      }
+    } catch (e) {
+      console.warn(`[lineups] ESPN summary lineups failed for ${fixtureId}:`, e.message);
+    }
+
     const match = await findMatch(fixtureId);
     if (match) {
       const homeTeam = match.teams?.home;
@@ -1312,6 +1391,20 @@ app.get('/fixtures/:fixtureId/events', async (req, res) => {
   if (cached) return res.json({ response: cached, source: 'cache' });
 
   try {
+    // 1. Try real ESPN match events/timeline
+    try {
+      const summary = await espnService.getMatchSummary(fixtureId);
+      if (summary) {
+        const realEvents = espnService.extractEvents(summary);
+        if (realEvents && realEvents.length > 0) {
+          setCache(cacheKey, realEvents, TTL.EVENTS);
+          return res.json({ response: realEvents, source: 'open-live-timeline' });
+        }
+      }
+    } catch (e) {
+      console.warn(`[events] ESPN summary events failed for ${fixtureId}:`, e.message);
+    }
+
     const match = await findMatch(fixtureId);
     if (match) {
       const isFinished = ['FT', 'AET', 'PEN'].includes(match.fixture?.status?.short);
