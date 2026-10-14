@@ -52,8 +52,8 @@ class FixtureNotifier extends StateNotifier<AsyncValue<List<Fixture>>> {
   final GetLiveFixtures getLiveFixtures;
   Timer? _autoRefreshTimer;
 
-  // Auto-refresh interval: 30 seconds during live matches (industry standard)
-  static const Duration _refreshInterval = Duration(seconds: 30);
+  // Auto-refresh interval: 15 seconds during live matches for instant score updates
+  static const Duration _refreshInterval = Duration(seconds: 15);
 
   FixtureNotifier(this.getLiveFixtures) : super(const AsyncValue.loading()) {
     fetchLiveFixtures();

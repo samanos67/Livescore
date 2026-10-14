@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import '../../../domain/entities/fixture.dart';
 import '../../../core/constants/app_colors.dart';
@@ -7,6 +8,7 @@ import 'tabs/lineups_tab.dart';
 import 'tabs/h2h_tab.dart';
 import '../live_tv/video_player_screen.dart';
 import '../../providers/favorites_provider.dart';
+import '../../providers/fixture_detail_provider.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../widgets/banner_ad_widget.dart';
@@ -22,15 +24,30 @@ class MatchDetailScreen extends ConsumerStatefulWidget {
 
 class _MatchDetailScreenState extends ConsumerState<MatchDetailScreen> with SingleTickerProviderStateMixin {
   late TabController _tabController;
+  Timer? _liveRefreshTimer;
 
   @override
   void initState() {
     super.initState();
     _tabController = TabController(length: 4, vsync: this);
+    if (widget.fixture.isLive) {
+      _startLiveRefreshTimer();
+    }
+  }
+
+  void _startLiveRefreshTimer() {
+    _liveRefreshTimer = Timer.periodic(const Duration(seconds: 15), (_) {
+      if (mounted) {
+        ref.invalidate(fixtureEventsProvider(widget.fixture.id));
+        ref.invalidate(fixtureStatisticsProvider(widget.fixture.id));
+        ref.invalidate(fixtureLineupsProvider(widget.fixture.id));
+      }
+    });
   }
 
   @override
   void dispose() {
+    _liveRefreshTimer?.cancel();
     _tabController.dispose();
     super.dispose();
   }
