@@ -15,7 +15,7 @@ class FavoritesService {
     return _box.get('teams', defaultValue: <int>[])!.cast<int>();
   }
 
-  Future<void> _saveFavoriteTeams(List<int> teams) async {
+  Future<void> saveFavoriteTeams(List<int> teams) async {
     await _box.put('teams', teams);
   }
 
@@ -26,7 +26,7 @@ class FavoritesService {
     } else {
       teams.add(teamId);
     }
-    await _saveFavoriteTeams(teams);
+    await saveFavoriteTeams(teams);
   }
 
   bool isFavoriteTeam(int teamId) {
@@ -41,7 +41,7 @@ class FavoritesService {
         teams.add(id);
       }
     }
-    await _saveFavoriteTeams(teams);
+    await saveFavoriteTeams(teams);
   }
 
   bool hasCompletedOnboarding() {

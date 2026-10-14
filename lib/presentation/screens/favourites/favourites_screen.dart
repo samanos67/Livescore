@@ -11,6 +11,7 @@ import '../common/in_app_article_screen.dart';
 
 import '../../providers/favorites_provider.dart';
 import '../onboarding/onboarding_screen.dart';
+import '../news/news_screen.dart';
 import '../../widgets/banner_ad_widget.dart';
 export '../../providers/favorites_provider.dart';
 
@@ -40,7 +41,16 @@ class FavouritesScreen extends ConsumerWidget {
         ),
         actions: [
           IconButton(
+            icon: const Icon(Icons.group_add_outlined),
+            tooltip: 'Manage Clubs',
+            onPressed: () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const OnboardingScreen(isInitialLaunch: false)),
+            ),
+          ),
+          IconButton(
             icon: const Icon(Icons.refresh),
+            tooltip: 'Refresh',
             onPressed: () {
               for (final id in favIds) {
                 ref.invalidate(teamInfoProvider(id));
@@ -66,7 +76,20 @@ class FavouritesScreen extends ConsumerWidget {
                 padding: const EdgeInsets.all(12),
                 children: [
                   // ── Favourite Teams Header Cards ──────────────────────────
-                  const _SectionTitle('Your Teams'),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const _SectionTitle('Your Teams'),
+                      TextButton.icon(
+                        icon: const Icon(Icons.edit, size: 13, color: AppColors.primary),
+                        label: const Text('Edit Clubs', style: TextStyle(color: AppColors.primary, fontSize: 12)),
+                        onPressed: () => Navigator.push(
+                          context,
+                          MaterialPageRoute(builder: (_) => const OnboardingScreen(isInitialLaunch: false)),
+                        ),
+                      ),
+                    ],
+                  ),
                   SizedBox(
                     height: 110,
                     child: ListView.separated(
@@ -101,7 +124,19 @@ class FavouritesScreen extends ConsumerWidget {
                   const SizedBox(height: 16),
 
                   // ── Football News ─────────────────────────────────────────
-                  const _SectionTitle('Latest Football News'),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const _SectionTitle('Club & World News'),
+                      TextButton(
+                        onPressed: () => Navigator.push(
+                          context,
+                          MaterialPageRoute(builder: (_) => const NewsScreen(initialTabIndex: 1)),
+                        ),
+                        child: const Text('View All', style: TextStyle(color: AppColors.primary, fontSize: 12)),
+                      ),
+                    ],
+                  ),
                   const _NewsSection(),
                   const SizedBox(height: 32),
                 ],

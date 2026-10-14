@@ -8,6 +8,7 @@ import '../../widgets/banner_ad_widget.dart';
 import '../../../domain/entities/fixture.dart';
 import '../search/search_screen.dart';
 import '../favourites/favourites_screen.dart';
+import '../news/news_screen.dart';
 
 class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
@@ -142,6 +143,14 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
           ],
         ),
         actions: [
+          IconButton(
+            icon: const Icon(Icons.newspaper_outlined),
+            tooltip: 'World & Club News',
+            onPressed: () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const NewsScreen()),
+            ),
+          ),
           IconButton(
             icon: const Icon(Icons.search),
             tooltip: 'Search Teams & Matches',

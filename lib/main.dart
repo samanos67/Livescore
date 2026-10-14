@@ -34,6 +34,7 @@ class LiveScoreApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
+      navigatorKey: NotificationService.navigatorKey,
       title: 'LiveScore Pro',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.lightTheme,

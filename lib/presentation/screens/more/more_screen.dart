@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../data/datasources/local/favorites_service.dart';
+import '../../../services/notification_service.dart';
 import '../onboarding/onboarding_screen.dart';
+import '../leagues/leagues_screen.dart';
 import 'privacy_policy_screen.dart';
 import '../live_tv/live_tv_screen.dart';
 
@@ -33,6 +35,56 @@ class _MoreScreenState extends State<MoreScreen> {
         await launchUrl(webUri, mode: LaunchMode.externalApplication);
       }
     } catch (_) {}
+  }
+
+  void _triggerTestGoalAlert() async {
+    await NotificationService().testSendGoalNotification();
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: const Row(
+          children: [
+            Icon(Icons.sports_soccer, color: AppColors.primary, size: 20),
+            SizedBox(width: 10),
+            Expanded(
+              child: Text(
+                'Goal notification sent! Pull down your notification bar and tap it to test returning to the match.',
+                style: TextStyle(fontSize: 12),
+              ),
+            ),
+          ],
+        ),
+        backgroundColor: AppColors.secondary,
+        duration: const Duration(seconds: 4),
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+      ),
+    );
+  }
+
+  void _triggerTestNewsAlert() async {
+    await NotificationService().testSendNewsNotification();
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: const Row(
+          children: [
+            Icon(Icons.newspaper, color: AppColors.primary, size: 20),
+            SizedBox(width: 10),
+            Expanded(
+              child: Text(
+                'News push notification sent! Tap it from your status bar to open the in-app article.',
+                style: TextStyle(fontSize: 12),
+              ),
+            ),
+          ],
+        ),
+        backgroundColor: AppColors.secondary,
+        duration: const Duration(seconds: 4),
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+      ),
+    );
   }
 
   @override
@@ -99,19 +151,18 @@ class _MoreScreenState extends State<MoreScreen> {
             ),
           ),
 
-          _buildSectionHeader('Preferences & Clubs'),
+          // ── Football Hub ─────────────────────────────────────────────────
+          _buildSectionHeader('Competitions & Broadcasts'),
           ListTile(
-            leading: const Icon(Icons.favorite, color: AppColors.primary),
-            title: const Text('Manage Followed Clubs'),
-            subtitle: const Text('Add or remove your favourite clubs'),
+            leading: const Icon(Icons.emoji_events, color: AppColors.primary),
+            title: const Text('Leagues & Standings'),
+            subtitle: const Text('Premier League, Champions League, La Liga, Serie A'),
             trailing: const Icon(Icons.arrow_forward_ios, size: 16),
             onTap: () => Navigator.push(
               context,
-              MaterialPageRoute(builder: (_) => const OnboardingScreen(isInitialLaunch: false)),
+              MaterialPageRoute(builder: (_) => const LeaguesScreen()),
             ),
           ),
-
-          _buildSectionHeader('Watch'),
           ListTile(
             leading: const Icon(Icons.live_tv, color: AppColors.primary),
             title: const Text('Live TV & Match Streams'),
@@ -123,10 +174,34 @@ class _MoreScreenState extends State<MoreScreen> {
             ),
           ),
 
-          _buildSectionHeader('Settings'),
+          // ── Club Preferences ─────────────────────────────────────────────
+          _buildSectionHeader('Preferences & Clubs'),
+          ListTile(
+            leading: const Icon(Icons.favorite, color: AppColors.primary),
+            title: const Text('Manage Followed Clubs'),
+            subtitle: const Text('Add, remove or customize your favourite clubs'),
+            trailing: const Icon(Icons.arrow_forward_ios, size: 16),
+            onTap: () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const OnboardingScreen(isInitialLaunch: false)),
+            ),
+          ),
+          ListTile(
+            leading: const Icon(Icons.restart_alt, color: Colors.orangeAccent),
+            title: const Text('Re-launch Club Picker'),
+            subtitle: const Text('Test initial onboarding club selection flow'),
+            trailing: const Icon(Icons.arrow_forward_ios, size: 16),
+            onTap: () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const OnboardingScreen(isInitialLaunch: true)),
+            ),
+          ),
+
+          // ── Push Notification Testing & Settings ─────────────────────────
+          _buildSectionHeader('Push Notifications'),
           SwitchListTile(
-            title: const Text('Match Notifications'),
-            subtitle: const Text('Kickoff reminders & live score updates'),
+            title: const Text('Match & News Alerts'),
+            subtitle: const Text('Instant goals, kickoff reminders & club news'),
             value: _notificationsEnabled,
             activeColor: AppColors.primary,
             onChanged: (val) async {
@@ -136,7 +211,7 @@ class _MoreScreenState extends State<MoreScreen> {
               if (!mounted) return;
               messenger.showSnackBar(
                 SnackBar(
-                  content: Text(val ? 'Match notifications enabled' : 'Match notifications muted'),
+                  content: Text(val ? 'Notifications enabled' : 'Notifications muted'),
                   duration: const Duration(seconds: 2),
                   backgroundColor: AppColors.secondary,
                 ),
@@ -144,19 +219,22 @@ class _MoreScreenState extends State<MoreScreen> {
             },
           ),
           ListTile(
-            title: const Text('Theme'),
-            subtitle: const Text('Dark Mode (Default)'),
-            trailing: const Icon(Icons.arrow_forward_ios, size: 16),
-            onTap: () {},
+            leading: const Icon(Icons.sports_soccer, color: AppColors.primary),
+            title: const Text('Test Instant Goal Push Notification'),
+            subtitle: const Text('Sends a sample goal alert to lock screen & status bar'),
+            trailing: const Icon(Icons.send, size: 18, color: AppColors.primary),
+            onTap: _triggerTestGoalAlert,
           ),
           ListTile(
-            title: const Text('Language'),
-            subtitle: const Text('English'),
-            trailing: const Icon(Icons.arrow_forward_ios, size: 16),
-            onTap: () {},
+            leading: const Icon(Icons.newspaper, color: Colors.blueAccent),
+            title: const Text('Test Breaking News Push Notification'),
+            subtitle: const Text('Sends a breaking news alert with in-app deep link'),
+            trailing: const Icon(Icons.send, size: 18, color: Colors.blueAccent),
+            onTap: _triggerTestNewsAlert,
           ),
 
-          _buildSectionHeader('Support'),
+          // ── App Settings & Support ───────────────────────────────────────
+          _buildSectionHeader('Support & Legal'),
           ListTile(
             title: const Text('Rate App'),
             subtitle: const Text('Enjoying the app? Rate us on Google Play'),
@@ -173,7 +251,7 @@ class _MoreScreenState extends State<MoreScreen> {
           ),
           ListTile(
             title: const Text('About LiveScore Pro'),
-            subtitle: const Text('Version 1.0.0'),
+            subtitle: const Text('Version 1.0.0 · Fast 4s Live Feeds'),
             trailing: const Icon(Icons.info_outline),
             onTap: () {
               showAboutDialog(
@@ -185,7 +263,7 @@ class _MoreScreenState extends State<MoreScreen> {
                   child: Image.asset('assets/images/app_logo.png', width: 48, height: 48),
                 ),
                 children: [
-                  const Text('Your ultimate football companion for live scores, fixtures, lineups, statistics, and streaming guides.'),
+                  const Text('Your ultimate football companion for live scores, fixtures, lineups, statistics, breaking news and streaming guides.'),
                 ],
               );
             },

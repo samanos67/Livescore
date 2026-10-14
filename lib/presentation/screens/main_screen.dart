@@ -1,25 +1,40 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/constants/app_colors.dart';
+import '../../services/notification_service.dart';
 import 'home/home_screen.dart';
+import 'news/news_screen.dart';
 import 'fixtures/fixtures_screen.dart';
-import 'leagues/leagues_screen.dart';
 import 'favourites/favourites_screen.dart';
 import 'more/more_screen.dart';
 
 final bottomNavIndexProvider = StateProvider<int>((ref) => 0);
 
-class MainScreen extends ConsumerWidget {
+class MainScreen extends ConsumerStatefulWidget {
   const MainScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<MainScreen> createState() => _MainScreenState();
+}
+
+class _MainScreenState extends ConsumerState<MainScreen> {
+  @override
+  void initState() {
+    super.initState();
+    // Process any deep link if launched via notification tap
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      NotificationService().checkPendingPayload();
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final currentIndex = ref.watch(bottomNavIndexProvider);
 
     final screens = [
       const HomeScreen(),
+      const NewsScreen(),
       const FixturesScreen(),
-      const LeaguesScreen(),
       const FavouritesScreen(),
       const MoreScreen(),
     ];
@@ -39,8 +54,8 @@ class MainScreen extends ConsumerWidget {
         showUnselectedLabels: true,
         items: const [
           BottomNavigationBarItem(icon: Icon(Icons.sports_soccer), label: 'Scores'),
+          BottomNavigationBarItem(icon: Icon(Icons.newspaper), label: 'News'),
           BottomNavigationBarItem(icon: Icon(Icons.calendar_today), label: 'Fixtures'),
-          BottomNavigationBarItem(icon: Icon(Icons.emoji_events), label: 'Leagues'),
           BottomNavigationBarItem(icon: Icon(Icons.favorite), label: 'My Teams'),
           BottomNavigationBarItem(icon: Icon(Icons.menu), label: 'More'),
         ],

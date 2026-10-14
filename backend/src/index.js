@@ -967,8 +967,14 @@ app.get('/news', async (req, res) => {
       const title   = (item.title ?? '').toLowerCase();
       const content = (item.contentSnippet ?? item.content ?? '').toLowerCase();
 
-      // Filter by team name if provided
-      if (team && !title.includes(team) && !content.includes(team)) continue;
+      // Filter by team name(s) if provided
+      if (team) {
+        const teams = team.split(',').map(t => t.trim()).filter(Boolean);
+        if (teams.length > 0) {
+          const matches = teams.some(t => title.includes(t) || content.includes(t));
+          if (!matches) continue;
+        }
+      }
 
       allArticles.push({
         title:       item.title ?? '',

@@ -30,6 +30,11 @@ class FavoritesNotifier extends StateNotifier<List<int>> {
     await _service.addFavoriteTeams(teamIds);
     state = _service.getFavoriteTeams();
   }
+
+  Future<void> setFavorites(List<int> teamIds) async {
+    await _service.saveFavoriteTeams(teamIds);
+    state = List<int>.from(teamIds);
+  }
 }
 
 final favoritesProvider = StateNotifierProvider<FavoritesNotifier, List<int>>((ref) {

@@ -47,6 +47,8 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
 
     final favService = FavoritesService();
     final hasCompletedOnboarding = favService.hasCompletedOnboarding();
+    final favoriteTeams = favService.getFavoriteTeams();
+    final shouldShowOnboarding = !hasCompletedOnboarding || favoriteTeams.isEmpty;
 
     Navigator.pushReplacement(
       context,
@@ -54,9 +56,9 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
         transitionDuration: const Duration(milliseconds: 600),
         pageBuilder: (_, animation, __) => FadeTransition(
           opacity: animation,
-          child: hasCompletedOnboarding
-              ? const MainScreen()
-              : const OnboardingScreen(isInitialLaunch: true),
+          child: shouldShowOnboarding
+              ? const OnboardingScreen(isInitialLaunch: true)
+              : const MainScreen(),
         ),
       ),
     );
