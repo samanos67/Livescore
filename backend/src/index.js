@@ -19,12 +19,12 @@ const YOUTUBE_API_KEY   = process.env.YOUTUBE_API_KEY || 'AIzaSyA1D3kBxN8i4pkom9
 const cache = new NodeCache({ stdTTL: 30, checkperiod: 10 });
 
 const TTL = {
-  LIVE:       30,              // 30 seconds
+  LIVE:       3,              // 3 seconds (instant live scores)
   FIXTURES:   3600 * 6,       // 6 hours
   STANDINGS:  3600 * 6,       // 6 hours (was 24h — now shorter to pick up live updates)
   LINEUPS:    3600 * 24,      // 24 hours
-  STATS:      60 * 5,         // 5 minutes
-  EVENTS:     30,             // 30 seconds
+  STATS:      5,              // 5 seconds (instant live match stats)
+  EVENTS:     4,              // 4 seconds (instant live match timeline/goals)
   H2H:        3600 * 24 * 7,  // 7 days
   TEAM:       3600 * 24,      // 24 hours
   SQUAD:      3600 * 24 * 7,  // 7 days
@@ -355,7 +355,7 @@ app.get('/fixtures/live', async (req, res) => {
         for (const f of espnLive) {
           MATCH_LOOKUP.set(Number(f.fixture.id), f);
         }
-        setCache(cacheKey, espnLive, 15); // Fast 15s refresh for instant scores
+        setCache(cacheKey, espnLive, TTL.LIVE); // Ultra-fast 3s refresh for real-time scores
         return res.json({ response: espnLive, source: 'open-live-feed', count: espnLive.length });
       }
     } catch (e) {

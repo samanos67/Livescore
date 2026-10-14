@@ -37,7 +37,7 @@ class _MatchDetailScreenState extends ConsumerState<MatchDetailScreen> with Sing
   }
 
   void _startLiveRefreshTimer() {
-    _liveRefreshTimer = Timer.periodic(const Duration(seconds: 15), (_) {
+    _liveRefreshTimer = Timer.periodic(const Duration(seconds: 4), (_) {
       if (mounted) {
         ref.invalidate(fixtureEventsProvider(widget.fixture.id));
         ref.invalidate(fixtureStatisticsProvider(widget.fixture.id));
