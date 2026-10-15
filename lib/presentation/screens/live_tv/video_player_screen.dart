@@ -3,6 +3,7 @@ import 'package:webview_flutter/webview_flutter.dart';
 import 'package:youtube_player_flutter/youtube_player_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../../core/constants/app_colors.dart';
+import '../../../core/constants/api_constants.dart';
 import '../../../domain/entities/live_stream_channel.dart';
 import '../../widgets/broadcast_guide_widget.dart';
 import '../../widgets/banner_ad_widget.dart';
@@ -493,6 +494,64 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
                             '• Server 3 streams instant match highlights and goal replays.\n'
                             '• Tap the top-right link icon to add your own custom M3U8/IPTV stream.',
                             style: TextStyle(color: Colors.grey, fontSize: 12, height: 1.4),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 14),
+
+                    // Telegram Live Streams Banner Card
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF0088CC).withOpacity(0.12),
+                        borderRadius: BorderRadius.circular(10),
+                        border: Border.all(color: const Color(0xFF0088CC).withOpacity(0.4)),
+                      ),
+                      child: Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(8),
+                            decoration: const BoxDecoration(
+                              color: Color(0xFF0088CC),
+                              shape: BoxShape.circle,
+                            ),
+                            child: const Icon(Icons.send, color: Colors.white, size: 16),
+                          ),
+                          const SizedBox(width: 10),
+                          const Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  'Live Streams on Telegram',
+                                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Colors.white),
+                                ),
+                                SizedBox(height: 2),
+                                Text(
+                                  'Join our channel for instant HD match links & goal clips',
+                                  style: TextStyle(color: Colors.white70, fontSize: 11),
+                                ),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          ElevatedButton(
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: const Color(0xFF0088CC),
+                              foregroundColor: Colors.white,
+                              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                              minimumSize: Size.zero,
+                              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                            ),
+                            onPressed: () async {
+                              final uri = Uri.parse(ApiConstants.telegramChannelUrl);
+                              if (await canLaunchUrl(uri)) {
+                                await launchUrl(uri, mode: LaunchMode.externalApplication);
+                              }
+                            },
+                            child: const Text('JOIN', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 11)),
                           ),
                         ],
                       ),

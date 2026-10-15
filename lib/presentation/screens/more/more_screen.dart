@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../../core/constants/app_colors.dart';
+import '../../../core/constants/api_constants.dart';
 import '../../../data/datasources/local/favorites_service.dart';
 import '../../../services/notification_service.dart';
 import '../onboarding/onboarding_screen.dart';
@@ -33,6 +34,21 @@ class _MoreScreenState extends State<MoreScreen> {
         await launchUrl(uri);
       } else {
         await launchUrl(webUri, mode: LaunchMode.externalApplication);
+      }
+    } catch (_) {}
+  }
+
+  Future<void> _openTelegramChannel() async {
+    final uri = Uri.parse(ApiConstants.telegramChannelUrl);
+    try {
+      if (await canLaunchUrl(uri)) {
+        await launchUrl(uri, mode: LaunchMode.externalApplication);
+      } else {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Opening Telegram channel...')),
+          );
+        }
       }
     } catch (_) {}
   }
@@ -172,6 +188,35 @@ class _MoreScreenState extends State<MoreScreen> {
               context,
               MaterialPageRoute(builder: (_) => const LiveTvScreen()),
             ),
+          ),
+          ListTile(
+            leading: Container(
+              padding: const EdgeInsets.all(6),
+              decoration: const BoxDecoration(
+                color: Color(0xFF0088CC),
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(Icons.send, color: Colors.white, size: 16),
+            ),
+            title: const Text('Telegram Stream Channel'),
+            subtitle: const Text('Join for live match links, goal clips & community'),
+            trailing: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+              decoration: BoxDecoration(
+                color: const Color(0xFF0088CC).withOpacity(0.15),
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: const Color(0xFF0088CC)),
+              ),
+              child: const Text(
+                'JOIN',
+                style: TextStyle(
+                  color: Color(0xFF0088CC),
+                  fontSize: 11,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+            onTap: _openTelegramChannel,
           ),
 
           // ── Club Preferences ─────────────────────────────────────────────

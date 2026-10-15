@@ -18,4 +18,8 @@ class ApiConstants {
   static const int ligue1Id          = 61;
   static const int championsLeagueId = 2;
   static const int season            = 2024;
+
+  // ─── Community & Live Stream Hub (Telegram) ─────────────────────────────────
+  // Update this to your real Telegram channel link once created
+  static const String telegramChannelUrl = 'https://t.me/livescore_official_streams';
 }

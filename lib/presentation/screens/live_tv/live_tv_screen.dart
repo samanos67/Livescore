@@ -5,6 +5,7 @@ import 'package:url_launcher/url_launcher.dart';
 import '../../providers/stream_provider.dart';
 import 'video_player_screen.dart';
 import '../../../core/constants/app_colors.dart';
+import '../../../core/constants/api_constants.dart';
 import '../../widgets/banner_ad_widget.dart';
 
 class LiveTvScreen extends ConsumerStatefulWidget {
@@ -414,7 +415,7 @@ class _LiveTvScreenState extends ConsumerState<LiveTvScreen> {
                     style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
                   ),
                   onPressed: () async {
-                    const telegramUrl = 'https://t.me/livescore_official_streams';
+                    final telegramUrl = ApiConstants.telegramChannelUrl;
                     final uri = Uri.parse(telegramUrl);
                     if (await canLaunchUrl(uri)) {
                       await launchUrl(uri, mode: LaunchMode.externalApplication);
