@@ -41,6 +41,51 @@ class StreamApiService {
       ],
     ),
     const LiveStreamChannel(
+      id: 'plex-sports',
+      title: 'Plex TV Live Sports (beIN SPORTS XTRA)',
+      competition: 'Ligue 1, Copa Libertadores & Global Soccer',
+      thumbnailUrl: 'https://images.unsplash.com/photo-1518091043644-c1d4457512c6?w=800&auto=format&fit=crop&q=60',
+      date: 'Free FAST Live Stream',
+      primaryStreamUrl: 'https://watch.plex.tv/live-tv',
+      isLive: true,
+      servers: [
+        StreamServer(
+          name: 'Plex TV Sports (Server 1)',
+          url: 'https://watch.plex.tv/live-tv',
+        ),
+      ],
+    ),
+    const LiveStreamChannel(
+      id: 'pluto-sports',
+      title: 'Pluto TV Football & Golazo Hub',
+      competition: 'CBS Sports Golazo & DAZN FAST Soccer',
+      thumbnailUrl: 'https://images.unsplash.com/photo-1489944445391-11688663c2da?w=800&auto=format&fit=crop&q=60',
+      date: 'Free FAST Channels',
+      primaryStreamUrl: 'https://pluto.tv/live-tv/category/sports',
+      isLive: true,
+      servers: [
+        StreamServer(
+          name: 'Pluto TV Sports (Server 1)',
+          url: 'https://pluto.tv/live-tv/category/sports',
+        ),
+      ],
+    ),
+    const LiveStreamChannel(
+      id: 'uefa-tv',
+      title: 'UEFA.tv Official Streaming',
+      competition: 'UEFA Champions League Replays & Live Youth',
+      thumbnailUrl: 'https://images.unsplash.com/photo-1517927033932-b3d18e61fb3a?w=800&auto=format&fit=crop&q=60',
+      date: 'Official UEFA Feed',
+      primaryStreamUrl: 'https://www.uefa.tv',
+      isLive: true,
+      servers: [
+        StreamServer(
+          name: 'UEFA.tv Official (Server 1)',
+          url: 'https://www.uefa.tv',
+        ),
+      ],
+    ),
+    const LiveStreamChannel(
       id: 'rm-tv',
       title: 'Real Madrid TV Live',
       competition: 'La Liga & Champions League Archive',
