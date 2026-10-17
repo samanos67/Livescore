@@ -1679,6 +1679,59 @@ app.get('/fixtures/h2h/:homeId/:awayId', async (req, res) => {
   }
 });
 
+// ─── Privacy Policy (Google Play Store Required) ──────────────────────────────
+app.get('/privacy', (req, res) => {
+  res.setHeader('Content-Type', 'text/html');
+  res.send(`<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Privacy Policy - LiveScore Pro</title>
+  <style>
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; line-height: 1.6; max-width: 800px; margin: 40px auto; padding: 0 20px; color: #222; background: #fafafa; }
+    h1 { color: #0d2818; border-bottom: 2px solid #00E676; padding-bottom: 10px; }
+    h2 { color: #166534; margin-top: 30px; }
+    p, li { color: #444; }
+    .updated { color: #666; font-size: 14px; margin-bottom: 25px; }
+    .card { background: white; padding: 30px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h1>Privacy Policy for LiveScore Pro</h1>
+    <div class="updated">Last updated: October 2026</div>
+
+    <p>LiveScore Pro ("we", "our", or "us") is dedicated to protecting your privacy. This Privacy Policy describes how your information is handled when using our mobile application.</p>
+
+    <h2>1. Information We Collect</h2>
+    <p>We collect minimal data required to provide real-time sports updates:</p>
+    <ul>
+      <li><strong>Device Information:</strong> Device type, OS version, and network state to ensure reliable live score delivery.</li>
+      <li><strong>Local Preferences:</strong> Your followed football clubs and push notification settings, stored securely on your local device.</li>
+      <li><strong>Ad Identifiers:</strong> Anonymous advertising IDs used by Google AdMob to serve non-intrusive advertisements in compliance with Google Play Policies.</li>
+    </ul>
+
+    <h2>2. Third-Party Services</h2>
+    <p>We partner with trusted third-party services that may process information under their own privacy policies:</p>
+    <ul>
+      <li><strong>Google AdMob:</strong> For display of banner, interstitial, and voluntary rewarded ads.</li>
+      <li><strong>Google Firebase Cloud Messaging:</strong> For delivery of instant goal alerts, kickoff reminders, and breaking news.</li>
+    </ul>
+
+    <h2>3. Data Protection & Security</h2>
+    <p>We do not sell, rent, or trade your personal data. We implement industry-standard safeguards to secure any technical data transmitted to our servers.</p>
+
+    <h2>4. Children's Privacy</h2>
+    <p>Our app does not address anyone under the age of 13. We do not knowingly collect personally identifiable information from children.</p>
+
+    <h2>5. Contact Us</h2>
+    <p>If you have any questions or feedback regarding this Privacy Policy, please contact us at: <code>support@asdevelopments.com</code></p>
+  </div>
+</body>
+</html>`);
+});
+
 // ─── 404 ─────────────────────────────────────────────────────────────────────
 app.use((req, res) => {
   res.status(404).json({ error: `Endpoint not found: ${req.method} ${req.path}` });
