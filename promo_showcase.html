@@ -1,0 +1,610 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>LiveScore Pro - Official Promo Video Demo</title>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700;900&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+    body {
+      background: #06090e;
+      color: #ffffff;
+      font-family: 'Inter', sans-serif;
+      overflow: hidden;
+      width: 100vw;
+      height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    /* Cinematic Stadium Background */
+    .bg-stadium {
+      position: absolute;
+      top: 0; left: 0; width: 100%; height: 100%;
+      background: radial-gradient(circle at 50% 30%, #0d2818 0%, #05130b 45%, #020604 100%);
+      z-index: 1;
+    }
+    .stadium-lights {
+      position: absolute;
+      top: 0; width: 100%; height: 60%;
+      background: radial-gradient(ellipse at 50% 0%, rgba(0, 230, 118, 0.25) 0%, transparent 70%);
+      pointer-events: none;
+      z-index: 2;
+    }
+
+    /* Video Frame Container (16:9 Landscape Video Aspect Ratio) */
+    .video-viewport {
+      position: relative;
+      width: 1280px;
+      height: 720px;
+      background: #080e14;
+      border-radius: 24px;
+      border: 1px solid rgba(0, 230, 118, 0.25);
+      box-shadow: 0 25px 80px rgba(0, 0, 0, 0.8), 0 0 60px rgba(0, 230, 118, 0.15);
+      overflow: hidden;
+      z-index: 10;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* Header Bar */
+    .promo-header {
+      height: 70px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 40px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+      background: rgba(10, 18, 26, 0.85);
+      backdrop-filter: blur(12px);
+      z-index: 20;
+    }
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-family: 'Outfit', sans-serif;
+      font-size: 26px;
+      font-weight: 900;
+      letter-spacing: -0.5px;
+    }
+    .brand span {
+      color: #00E676;
+    }
+    .brand-badge {
+      background: rgba(0, 230, 118, 0.15);
+      border: 1px solid #00E676;
+      color: #00E676;
+      font-size: 11px;
+      font-weight: 700;
+      padding: 4px 10px;
+      border-radius: 20px;
+      letter-spacing: 0.5px;
+    }
+
+    /* Main Showcase Area */
+    .scene-container {
+      flex: 1;
+      position: relative;
+      overflow: hidden;
+    }
+    .scene {
+      position: absolute;
+      top: 0; left: 0; width: 100%; height: 100%;
+      padding: 40px 60px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      opacity: 0;
+      transform: scale(0.96) translateY(20px);
+      transition: all 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+      pointer-events: none;
+    }
+    .scene.active {
+      opacity: 1;
+      transform: scale(1) translateY(0);
+      pointer-events: auto;
+    }
+
+    /* Left Copy Column */
+    .scene-text {
+      max-width: 480px;
+    }
+    .scene-tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 13px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+      color: #00E676;
+      margin-bottom: 14px;
+    }
+    .scene-tag::before {
+      content: '';
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #00E676;
+      box-shadow: 0 0 10px #00E676;
+      animation: pulse 1.5s infinite;
+    }
+    .scene-title {
+      font-family: 'Outfit', sans-serif;
+      font-size: 44px;
+      font-weight: 900;
+      line-height: 1.15;
+      margin-bottom: 16px;
+      background: linear-gradient(135deg, #ffffff 40%, #a7f3d0 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    .scene-desc {
+      font-size: 17px;
+      line-height: 1.6;
+      color: #94a3b8;
+      margin-bottom: 24px;
+    }
+
+    /* Interactive Phone Mockup on Right */
+    .phone-mockup {
+      width: 320px;
+      height: 540px;
+      background: #111b24;
+      border-radius: 36px;
+      border: 6px solid #22303c;
+      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.8), 0 0 40px rgba(0, 230, 118, 0.2);
+      position: relative;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+    .phone-notch {
+      width: 120px;
+      height: 20px;
+      background: #22303c;
+      margin: 0 auto;
+      border-bottom-left-radius: 12px;
+      border-bottom-right-radius: 12px;
+    }
+    .phone-screen {
+      flex: 1;
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      overflow-y: auto;
+    }
+
+    /* Mock Cards inside Phone */
+    .match-card {
+      background: #182530;
+      border-radius: 16px;
+      padding: 16px;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      position: relative;
+    }
+    .match-header {
+      display: flex;
+      justify-content: space-between;
+      font-size: 11px;
+      color: #94a3b8;
+      margin-bottom: 12px;
+    }
+    .match-live-pill {
+      background: #ef4444;
+      color: white;
+      font-weight: 800;
+      padding: 2px 8px;
+      border-radius: 6px;
+      font-size: 10px;
+      animation: pulse 1.2s infinite;
+    }
+    .match-teams {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      text-align: center;
+    }
+    .team {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 6px;
+    }
+    .team-badge {
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.1);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 20px;
+    }
+    .team-name {
+      font-size: 12px;
+      font-weight: 700;
+    }
+    .match-score {
+      font-family: 'Outfit', sans-serif;
+      font-size: 32px;
+      font-weight: 900;
+      color: #ffffff;
+      padding: 0 10px;
+    }
+    .match-minute {
+      font-size: 11px;
+      color: #00E676;
+      font-weight: 700;
+      margin-top: 4px;
+    }
+
+    /* Stats Progress Bar */
+    .stat-row {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      margin-top: 10px;
+      font-size: 11px;
+    }
+    .stat-labels {
+      display: flex;
+      justify-content: space-between;
+      font-weight: 600;
+    }
+    .bar-track {
+      height: 6px;
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 3px;
+      overflow: hidden;
+      display: flex;
+    }
+    .bar-fill-left {
+      background: #00E676;
+      width: 58%;
+      height: 100%;
+    }
+    .bar-fill-right {
+      background: #f97316;
+      width: 42%;
+      height: 100%;
+    }
+
+    /* Tactical Pitch Widget */
+    .pitch-widget {
+      width: 100%;
+      height: 220px;
+      background: #166534;
+      border-radius: 14px;
+      position: relative;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      background-image: 
+        repeating-linear-gradient(0deg, rgba(255,255,255,0.05) 0px, rgba(255,255,255,0.05) 20px, transparent 20px, transparent 40px);
+    }
+    .pitch-circle {
+      position: absolute;
+      top: 50%; left: 50%;
+      transform: translate(-50%, -50%);
+      width: 60px; height: 60px;
+      border: 1px solid rgba(255, 255, 255, 0.4);
+      border-radius: 50%;
+    }
+    .pitch-line {
+      position: absolute;
+      top: 50%; left: 0; width: 100%;
+      height: 1px;
+      background: rgba(255, 255, 255, 0.4);
+    }
+    .pitch-player {
+      position: absolute;
+      width: 24px; height: 24px;
+      border-radius: 50%;
+      background: #00E676;
+      color: #064e3b;
+      font-size: 10px;
+      font-weight: 900;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border: 2px solid white;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.5);
+    }
+
+    /* Bottom Controller Bar */
+    .promo-controls {
+      height: 60px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 40px;
+      background: rgba(10, 18, 26, 0.95);
+      border-top: 1px solid rgba(255, 255, 255, 0.08);
+      z-index: 20;
+    }
+    .scene-indicators {
+      display: flex;
+      gap: 8px;
+    }
+    .indicator {
+      width: 12px;
+      height: 6px;
+      border-radius: 3px;
+      background: rgba(255, 255, 255, 0.2);
+      cursor: pointer;
+      transition: all 0.3s;
+    }
+    .indicator.active {
+      width: 32px;
+      background: #00E676;
+      box-shadow: 0 0 10px #00E676;
+    }
+    .control-btn {
+      background: #00E676;
+      color: #064e3b;
+      font-family: 'Outfit', sans-serif;
+      font-weight: 800;
+      font-size: 14px;
+      border: none;
+      padding: 10px 22px;
+      border-radius: 30px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      transition: transform 0.2s, background 0.2s;
+    }
+    .control-btn:hover {
+      transform: scale(1.05);
+      background: #69f0ae;
+    }
+
+    @keyframes pulse {
+      0% { transform: scale(1); opacity: 1; }
+      50% { transform: scale(1.15); opacity: 0.7; }
+      100% { transform: scale(1); opacity: 1; }
+    }
+  </style>
+</head>
+<body>
+  <div class="bg-stadium"></div>
+  <div class="stadium-lights"></div>
+
+  <!-- Video Container -->
+  <div class="video-viewport" id="videoViewport">
+    
+    <!-- Top Header -->
+    <div class="promo-header">
+      <div class="brand">
+        LiveScore <span>Pro</span>
+        <span class="brand-badge">GOOGLE PLAY READY</span>
+      </div>
+      <div style="font-size: 13px; color: #94a3b8; font-weight: 600;">
+        ⚡ 4s Ultra-Fast In-Play Feeds • Free Streams
+      </div>
+    </div>
+
+    <!-- Scene Container -->
+    <div class="scene-container">
+      
+      <!-- SCENE 1: LIVE SCORES -->
+      <div class="scene active" id="scene-0">
+        <div class="scene-text">
+          <div class="scene-tag">Instant Match Feeds</div>
+          <h1 class="scene-title">Lightning-Fast Live Scores</h1>
+          <p class="scene-desc">Get ultra-low latency match coverage with real-time goal alerts, in-play minute clocks, and multi-league updates faster than live TV broadcasts.</p>
+          <button class="control-btn" onclick="nextScene()">See Match Details ➔</button>
+        </div>
+        <div class="phone-mockup">
+          <div class="phone-notch"></div>
+          <div class="phone-screen">
+            <div class="match-card">
+              <div class="match-header">
+                <span>PREMIER LEAGUE</span>
+                <span class="match-live-pill">78' LIVE</span>
+              </div>
+              <div class="match-teams">
+                <div class="team">
+                  <div class="team-badge">🔴</div>
+                  <div class="team-name">Arsenal</div>
+                </div>
+                <div class="match-score">2 - 1</div>
+                <div class="team">
+                  <div class="team-badge">🔵</div>
+                  <div class="team-name">Chelsea</div>
+                </div>
+              </div>
+              <div style="text-align: center; margin-top: 8px; font-size: 11px; color: #00E676; font-weight: 700;">
+                ⚽ 72' Saka (Goal)
+              </div>
+            </div>
+
+            <div class="match-card" style="opacity: 0.85;">
+              <div class="match-header">
+                <span>LA LIGA</span>
+                <span class="match-live-pill" style="background:#eab308; color:black;">52' 2H</span>
+              </div>
+              <div class="match-teams">
+                <div class="team">
+                  <div class="team-badge">⚪</div>
+                  <div class="team-name">Real Madrid</div>
+                </div>
+                <div class="match-score">1 - 0</div>
+                <div class="team">
+                  <div class="team-badge">🔵</div>
+                  <div class="team-name">Barcelona</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- SCENE 2: TACTICAL LINEUPS & PITCH -->
+      <div class="scene" id="scene-1">
+        <div class="scene-text">
+          <div class="scene-tag">Tactical Mastery</div>
+          <h1 class="scene-title">Starting XI & Visual Pitch Formations</h1>
+          <p class="scene-desc">Inspect official team lineups, tactical formations (4-3-3, 3-5-2), live player ratings, and substitution benches before kickoff.</p>
+          <button class="control-btn" onclick="nextScene()">See Match Stats ➔</button>
+        </div>
+        <div class="phone-mockup">
+          <div class="phone-notch"></div>
+          <div class="phone-screen">
+            <div style="font-size: 13px; font-weight: 700; color: #00E676; margin-bottom: 4px;">4-3-3 FORMATION</div>
+            <div class="pitch-widget">
+              <div class="pitch-circle"></div>
+              <div class="pitch-line"></div>
+              <!-- Players -->
+              <div class="pitch-player" style="bottom: 12px; left: 45%;">1</div>
+              <div class="pitch-player" style="bottom: 60px; left: 15%;">2</div>
+              <div class="pitch-player" style="bottom: 50px; left: 35%;">4</div>
+              <div class="pitch-player" style="bottom: 50px; left: 55%;">5</div>
+              <div class="pitch-player" style="bottom: 60px; left: 75%;">3</div>
+              <div class="pitch-player" style="top: 85px; left: 25%;">8</div>
+              <div class="pitch-player" style="top: 100px; left: 45%;">6</div>
+              <div class="pitch-player" style="top: 85px; left: 65%;">10</div>
+              <div class="pitch-player" style="top: 30px; left: 20%;">7</div>
+              <div class="pitch-player" style="top: 20px; left: 45%;">9</div>
+              <div class="pitch-player" style="top: 30px; left: 70%;">11</div>
+            </div>
+            <div style="background: rgba(255,255,255,0.06); padding: 8px 12px; border-radius: 8px; font-size: 11px;">
+              ⭐ Player of the Match: <b>B. Saka (8.9)</b>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- SCENE 3: IN-DEPTH MATCH STATS -->
+      <div class="scene" id="scene-2">
+        <div class="scene-text">
+          <div class="scene-tag">Deep Analytics</div>
+          <h1 class="scene-title">In-Depth Match Statistics</h1>
+          <p class="scene-desc">Track real-time possession percentages, shots on target, corner counts, expected goals (xG), and momentum graphs for all matches.</p>
+          <button class="control-btn" onclick="nextScene()">See Free Streams ➔</button>
+        </div>
+        <div class="phone-mockup">
+          <div class="phone-notch"></div>
+          <div class="phone-screen">
+            <div class="match-card">
+              <div style="font-weight: 700; font-size: 14px; text-align: center; margin-bottom: 10px;">Arsenal vs Chelsea</div>
+              <div class="stat-row">
+                <div class="stat-labels"><span>58%</span><span>Possession</span><span>42%</span></div>
+                <div class="bar-track"><div class="bar-fill-left" style="width: 58%"></div><div class="bar-fill-right" style="width: 42%"></div></div>
+              </div>
+              <div class="stat-row">
+                <div class="stat-labels"><span>14 (6)</span><span>Shots (On Target)</span><span>8 (2)</span></div>
+                <div class="bar-track"><div class="bar-fill-left" style="width: 65%"></div><div class="bar-fill-right" style="width: 35%"></div></div>
+              </div>
+              <div class="stat-row">
+                <div class="stat-labels"><span>7</span><span>Corner Kicks</span><span>3</span></div>
+                <div class="bar-track"><div class="bar-fill-left" style="width: 70%"></div><div class="bar-fill-right" style="width: 30%"></div></div>
+              </div>
+              <div class="stat-row">
+                <div class="stat-labels"><span>88%</span><span>Pass Accuracy</span><span>81%</span></div>
+                <div class="bar-track"><div class="bar-fill-left" style="width: 54%"></div><div class="bar-fill-right" style="width: 46%"></div></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- SCENE 4: LIVE TV & COMMUNITY STREAMS -->
+      <div class="scene" id="scene-3">
+        <div class="scene-text">
+          <div class="scene-tag">Watch Anywhere</div>
+          <h1 class="scene-title">Live TV & Match Streams Hub</h1>
+          <p class="scene-desc">Enjoy free, legal FAST broadcast streams from Plex TV, Pluto TV, and FIFA+, plus direct access to our official Telegram community stream channels.</p>
+          <button class="control-btn" onclick="nextScene()">Download App ➔</button>
+        </div>
+        <div class="phone-mockup">
+          <div class="phone-notch"></div>
+          <div class="phone-screen">
+            <div style="background: linear-gradient(135deg, #0088cc, #005580); border-radius: 12px; padding: 14px; color: white;">
+              <div style="font-weight: 800; font-size: 13px;">✈️ Live Telegram Community</div>
+              <div style="font-size: 11px; opacity: 0.9; margin: 4px 0 10px;">Direct HD match streams, goal replays & daily fixture alerts.</div>
+              <div style="background: white; color: #0088cc; font-size: 11px; font-weight: 800; padding: 6px 12px; border-radius: 6px; text-align: center;">
+                JOIN COMMUNITY (FREE)
+              </div>
+            </div>
+
+            <div style="background: #182530; border-radius: 12px; padding: 12px; border: 1px solid rgba(255,255,255,0.08);">
+              <div style="font-size: 11px; color: #f59e0b; font-weight: 700;">📺 PLEX TV & PLUTO GOLAZO</div>
+              <div style="font-size: 12px; font-weight: 700; margin-top: 4px;">beIN SPORTS XTRA & FIFA+ Live</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- SCENE 5: CALL TO ACTION -->
+      <div class="scene" id="scene-4">
+        <div class="scene-text" style="max-width: 600px; text-align: center; margin: 0 auto;">
+          <div class="scene-tag" style="justify-content: center;">Available Now</div>
+          <h1 class="scene-title" style="font-size: 52px;">Download LiveScore Pro</h1>
+          <p class="scene-desc">Join millions of football fans worldwide for fast real-time scores, lineups, statistics, breaking news, and free streaming guides.</p>
+          <div style="display: flex; gap: 14px; justify-content: center; margin-top: 20px;">
+            <button class="control-btn" style="font-size: 16px; padding: 14px 28px;" onclick="goToScene(0)">
+              ⭐ Replay Demo
+            </button>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Bottom Controls -->
+    <div class="promo-controls">
+      <div class="scene-indicators" id="indicators">
+        <div class="indicator active" onclick="goToScene(0)"></div>
+        <div class="indicator" onclick="goToScene(1)"></div>
+        <div class="indicator" onclick="goToScene(2)"></div>
+        <div class="indicator" onclick="goToScene(3)"></div>
+        <div class="indicator" onclick="goToScene(4)"></div>
+      </div>
+      <div style="display: flex; gap: 10px;">
+        <button id="prevBtn" class="control-btn" style="background: rgba(255,255,255,0.1); color: white;" onclick="prevScene()">◀ Prev</button>
+        <button id="nextBtn" class="control-btn" onclick="nextScene()">Next Feature ▶</button>
+      </div>
+    </div>
+
+  </div>
+
+  <script>
+    let currentScene = 0;
+    const totalScenes = 5;
+
+    function goToScene(index) {
+      document.querySelectorAll('.scene').forEach((s, i) => {
+        s.classList.toggle('active', i === index);
+      });
+      document.querySelectorAll('.indicator').forEach((ind, i) => {
+        ind.classList.toggle('active', i === index);
+      });
+      currentScene = index;
+    }
+
+    function nextScene() {
+      currentScene = (currentScene + 1) % totalScenes;
+      goToScene(currentScene);
+    }
+
+    function prevScene() {
+      currentScene = (currentScene - 1 + totalScenes) % totalScenes;
+      goToScene(currentScene);
+    }
+
+    // Auto rotate every 3.5 seconds
+    setInterval(() => {
+      nextScene();
+    }, 3500);
+  </script>
+</body>
+</html>
