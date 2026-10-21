@@ -12,6 +12,23 @@ subprojects {
 subprojects {
     project.evaluationDependsOn(":app")
 }
+subprojects {
+    plugins.withId("com.android.library") {
+        if (!project.android.hasProperty("namespace") || project.android.namespace == null) {
+            project.android.namespace = (project.name == "flutter_inappwebview") ? 
+                "com.pichillilorenzo.flutter_inappwebview" : 
+                (project.group ? project.group : "com.plugin.${project.name.replace('-', '_')}")
+        }
+        project.android {
+            buildTypes {
+                release {
+                    minifyEnabled false
+                    proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), rootProject.file('proguard-rules.pro')
+                }
+            }
+        }
+    }
+}
 
 
 tasks.register("clean", Delete) {

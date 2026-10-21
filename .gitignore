@@ -46,3 +46,9 @@ app.*.map.json
 # Root test screenshots & scratch files
 /*.png
 input.txt
+
+# Keystore & Signing Secrets
+*.jks
+*.keystore
+key.properties
+
