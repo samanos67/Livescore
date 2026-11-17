@@ -1679,6 +1679,151 @@ app.get('/fixtures/h2h/:homeId/:awayId', async (req, res) => {
   }
 });
 
+// ─── App Landing Page (Developer Site) ─────────────────────────────────────────
+app.get('/', (req, res) => {
+  res.setHeader('Content-Type', 'text/html');
+  res.send(`<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>LiveScore Pro - Real-Time Football Scores & Live TV Guide</title>
+  <style>
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; line-height: 1.6; max-width: 860px; margin: 40px auto; padding: 0 20px; color: #222; background: #08170e; }
+    .card { background: white; padding: 40px; border-radius: 16px; box-shadow: 0 8px 30px rgba(0,0,0,0.3); }
+    h1 { color: #0d2818; margin-top: 0; font-size: 28px; }
+    .badge { display: inline-block; background: #e8f5e9; color: #166534; padding: 4px 12px; border-radius: 20px; font-weight: 600; font-size: 13px; margin-bottom: 16px; }
+    p { color: #444; font-size: 16px; }
+    .features { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; margin: 25px 0; }
+    .feat-card { background: #f9fbf9; border: 1px solid #e0ede2; padding: 16px; border-radius: 10px; }
+    .feat-card h3 { color: #166534; margin: 0 0 6px 0; font-size: 16px; }
+    .feat-card p { margin: 0; font-size: 13px; color: #555; }
+    .links { border-top: 1px solid #eee; padding-top: 20px; margin-top: 30px; display: flex; flex-wrap: wrap; gap: 20px; }
+    .links a { color: #166534; text-decoration: none; font-weight: 600; }
+    .links a:hover { text-decoration: underline; color: #00E676; }
+    footer { margin-top: 25px; text-align: center; color: #999; font-size: 13px; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <div class="badge">Official App Portal</div>
+    <h1>LiveScore Pro</h1>
+    <p>LiveScore Pro by <strong>Asdevelopments LTD</strong> delivers lightning-fast real-time football scores, verified starting lineups, interactive 3D tactical pitch views, in-depth match statistics, breaking football news, and an all-in-one Live Sports TV guide.</p>
+    
+    <div class="features">
+      <div class="feat-card">
+        <h3>⚡ Real-Time Scores</h3>
+        <p>Instant goal updates, match clocks, cards, and kickoff notifications across 50+ global leagues.</p>
+      </div>
+      <div class="feat-card">
+        <h3>📋 3D Tactical Pitch</h3>
+        <p>Verified starting lineups, interactive formations (4-3-3, 4-2-3-1), and player position tracking.</p>
+      </div>
+      <div class="feat-card">
+        <h3>📊 In-Depth Analytics</h3>
+        <p>Ball possession %, expected goals (xG), shots on target, and comprehensive head-to-head records.</p>
+      </div>
+      <div class="feat-card">
+        <h3>📺 Live TV & Streams</h3>
+        <p>Official match broadcast schedules, legal streaming channels, and community fan hubs.</p>
+      </div>
+    </div>
+
+    <div class="links">
+      <a href="/privacy">Privacy Policy</a>
+      <a href="/terms">Terms of Service</a>
+      <a href="/app-ads.txt">app-ads.txt</a>
+      <a href="/health">System Status</a>
+    </div>
+
+    <footer>
+      &copy; 2026 Asdevelopments LTD. All rights reserved. &bull; Contact: support@asdevelopments.com
+    </footer>
+  </div>
+</body>
+</html>`);
+});
+
+// ─── AdMob app-ads.txt (IAB Verification) ──────────────────────────────────
+app.get('/app-ads.txt', (req, res) => {
+  res.setHeader('Content-Type', 'text/plain; charset=utf-8');
+  res.send('google.com, pub-5162704187856871, DIRECT, f08c47fec0942fa0\n');
+});
+
+// ─── robots.txt (Allows Crawlers like AdMob & Googlebot) ──────────────────────
+app.get('/robots.txt', (req, res) => {
+  res.setHeader('Content-Type', 'text/plain; charset=utf-8');
+  res.send('User-agent: *\nAllow: /\n');
+});
+
+// ─── Terms of Service (Google Play & Legal Required) ──────────────────────────
+app.get('/terms', (req, res) => {
+  res.setHeader('Content-Type', 'text/html');
+  res.send(`<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Terms of Service - LiveScore Pro</title>
+  <style>
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; line-height: 1.6; max-width: 800px; margin: 40px auto; padding: 0 20px; color: #222; background: #fafafa; }
+    h1 { color: #0d2818; border-bottom: 2px solid #00E676; padding-bottom: 10px; }
+    h2 { color: #166534; margin-top: 30px; }
+    p, li { color: #444; }
+    .updated { color: #666; font-size: 14px; margin-bottom: 25px; }
+    .card { background: white; padding: 30px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
+    .nav { margin-bottom: 20px; }
+    .nav a { color: #166534; text-decoration: none; font-weight: 600; font-size: 14px; margin-right: 15px; }
+    .nav a:hover { text-decoration: underline; color: #00E676; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <div class="nav">
+      <a href="/">&larr; Back to Home</a>
+      <a href="/privacy">Privacy Policy</a>
+    </div>
+    <h1>Terms of Service for LiveScore Pro</h1>
+    <div class="updated">Last updated: November 2026</div>
+
+    <p>Welcome to LiveScore Pro. By accessing, downloading, or using the LiveScore Pro mobile application ("the App"), provided by <strong>Asdevelopments LTD</strong> ("we", "our", or "us"), you agree to be bound by these Terms of Service ("Terms").</p>
+
+    <h2>1. Sports Data & Information Service Disclaimer</h2>
+    <p>LiveScore Pro delivers real-time football scores, match fixtures, lineups, statistics, and sports broadcasting information for personal, informational, and entertainment purposes only.</p>
+    <ul>
+      <li><strong>Data Latency:</strong> While we strive for instant delivery, real-time transmissions may experience delays depending on internet connection speed, technical provider feeds, and mobile network conditions.</li>
+      <li><strong>No Warranty on Accuracy:</strong> All sports data is provided "as is". We make no warranties regarding 100% accuracy, uninterrupted uptime, or reliability of match details.</li>
+      <li><strong>No Gambling / Betting:</strong> LiveScore Pro does not host, process, or facilitate real-money gambling or betting transactions.</li>
+    </ul>
+
+    <h2>2. Live TV & Third-Party Streaming Links</h2>
+    <p>The App provides an informational Live TV guide and links to third-party streaming channels and official broadcasting schedules.</p>
+    <ul>
+      <li>External broadcasts and feeds are operated and hosted by third parties. LiveScore Pro does not host or store any unauthorized video streams.</li>
+      <li>Users are solely responsible for complying with all applicable copyright and broadcasting laws in their respective country or jurisdiction.</li>
+    </ul>
+
+    <h2>3. Intellectual Property & Nominative Reference</h2>
+    <p>All software, proprietary algorithms, designs, and content within LiveScore Pro are the intellectual property of Asdevelopments LTD.</p>
+    <p>All club names, crests, competition titles, and third-party trademarks referenced in the App belong strictly to their respective owners and are displayed exclusively for factual identification and reporting purposes under fair use doctrine. LiveScore Pro is an independent application and is not sponsored by or affiliated with any football club, league, or federation unless explicitly stated.</p>
+
+    <h2>4. In-App Advertisements</h2>
+    <p>LiveScore Pro is supported by non-intrusive advertisements served through Google AdMob (including banners, interstitials, and voluntary rewarded ads). By using the App, you consent to the display of advertisements in compliance with Google Play Developer Policies.</p>
+
+    <h2>5. Push Notifications</h2>
+    <p>You may elect to receive push notifications for goal updates, kickoff reminders, and breaking news. You can manage or disable push notifications at any time directly through the App settings or your device system settings.</p>
+
+    <h2>6. Limitation of Liability</h2>
+    <p>In no event shall Asdevelopments LTD or its affiliates be liable for any indirect, incidental, special, consequential, or punitive damages resulting from your use of or inability to use the App.</p>
+
+    <h2>7. Contact Information</h2>
+    <p>For questions or legal inquiries regarding these Terms of Service, please contact:</p>
+    <p><strong>Asdevelopments LTD</strong><br>Email: <code>support@asdevelopments.com</code></p>
+  </div>
+</body>
+</html>`);
+});
+
 // ─── Privacy Policy (Google Play Store Required) ──────────────────────────────
 app.get('/privacy', (req, res) => {
   res.setHeader('Content-Type', 'text/html');
@@ -1695,14 +1840,21 @@ app.get('/privacy', (req, res) => {
     p, li { color: #444; }
     .updated { color: #666; font-size: 14px; margin-bottom: 25px; }
     .card { background: white; padding: 30px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
+    .nav { margin-bottom: 20px; }
+    .nav a { color: #166534; text-decoration: none; font-weight: 600; font-size: 14px; margin-right: 15px; }
+    .nav a:hover { text-decoration: underline; color: #00E676; }
   </style>
 </head>
 <body>
   <div class="card">
+    <div class="nav">
+      <a href="/">&larr; Back to Home</a>
+      <a href="/terms">Terms of Service</a>
+    </div>
     <h1>Privacy Policy for LiveScore Pro</h1>
-    <div class="updated">Last updated: October 2026</div>
+    <div class="updated">Last updated: November 2026</div>
 
-    <p>LiveScore Pro ("we", "our", or "us") is dedicated to protecting your privacy. This Privacy Policy describes how your information is handled when using our mobile application.</p>
+    <p>LiveScore Pro ("we", "our", or "us"), provided by <strong>Asdevelopments LTD</strong>, is dedicated to protecting your privacy. This Privacy Policy describes how your information is handled when using our mobile application.</p>
 
     <h2>1. Information We Collect</h2>
     <p>We collect minimal data required to provide real-time sports updates:</p>

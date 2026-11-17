@@ -7,6 +7,7 @@ import '../../../services/notification_service.dart';
 import '../onboarding/onboarding_screen.dart';
 import '../leagues/leagues_screen.dart';
 import 'privacy_policy_screen.dart';
+import 'terms_of_service_screen.dart';
 import '../live_tv/live_tv_screen.dart';
 
 class MoreScreen extends StatefulWidget {
@@ -292,6 +293,14 @@ class _MoreScreenState extends State<MoreScreen> {
             onTap: () => Navigator.push(
               context,
               MaterialPageRoute(builder: (_) => const PrivacyPolicyScreen()),
+            ),
+          ),
+          ListTile(
+            title: const Text('Terms of Service'),
+            trailing: const Icon(Icons.arrow_forward_ios, size: 16),
+            onTap: () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const TermsOfServiceScreen()),
             ),
           ),
           ListTile(

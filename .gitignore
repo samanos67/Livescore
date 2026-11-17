@@ -51,4 +51,6 @@ input.txt
 *.jks
 *.keystore
 key.properties
+*.aab
+*.apk
 

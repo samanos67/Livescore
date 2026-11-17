@@ -17,7 +17,7 @@ class PrivacyPolicyScreen extends StatelessWidget {
           children: [
             _buildSection(
               'Introduction',
-              'LiveScore ("we", "our", or "us") is committed to protecting your privacy. This Privacy Policy explains how we collect, use, and share information when you use our mobile application.',
+              'LiveScore Pro ("we", "our", or "us"), provided by Asdevelopments LTD, is committed to protecting your privacy. This Privacy Policy explains how we collect, use, and share information when you use our mobile application.',
             ),
             _buildSection(
               '1. Information We Collect',
@@ -70,7 +70,8 @@ class PrivacyPolicyScreen extends StatelessWidget {
             _buildSection(
               '9. Contact Us',
               'If you have any questions about this Privacy Policy, please contact us at:\n\n'
-              'Email: support@livescoreapp.com',
+              'Asdevelopments LTD\n'
+              'Email: support@asdevelopments.com',
             ),
             const SizedBox(height: 16),
             Center(
