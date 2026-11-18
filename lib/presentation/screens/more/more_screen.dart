@@ -9,6 +9,7 @@ import '../leagues/leagues_screen.dart';
 import 'privacy_policy_screen.dart';
 import 'terms_of_service_screen.dart';
 import '../live_tv/live_tv_screen.dart';
+import '../predictions/predictions_screen.dart';
 
 class MoreScreen extends StatefulWidget {
   const MoreScreen({super.key});
@@ -170,6 +171,39 @@ class _MoreScreenState extends State<MoreScreen> {
 
           // ── Football Hub ─────────────────────────────────────────────────
           _buildSectionHeader('Competitions & Broadcasts'),
+          ListTile(
+            leading: Container(
+              padding: const EdgeInsets.all(6),
+              decoration: BoxDecoration(
+                color: const Color(0xFF00D084).withOpacity(0.15),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: const Icon(Icons.smart_toy_rounded, color: Color(0xFF00D084), size: 20),
+            ),
+            title: Row(
+              children: [
+                const Text('AI Match Forecasts'),
+                const SizedBox(width: 8),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF00D084),
+                    borderRadius: BorderRadius.circular(4),
+                  ),
+                  child: const Text(
+                    'NEW',
+                    style: TextStyle(color: Colors.black, fontSize: 9, fontWeight: FontWeight.bold),
+                  ),
+                ),
+              ],
+            ),
+            subtitle: const Text('Statistical score forecasts, xG models & tactical breakdown'),
+            trailing: const Icon(Icons.arrow_forward_ios, size: 16),
+            onTap: () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const PredictionsScreen()),
+            ),
+          ),
           ListTile(
             leading: const Icon(Icons.emoji_events, color: AppColors.primary),
             title: const Text('Leagues & Standings'),

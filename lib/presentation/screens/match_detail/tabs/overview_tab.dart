@@ -10,6 +10,8 @@ import '../../../providers/fixture_detail_provider.dart';
 import '../../../providers/team_provider.dart';
 import '../../live_tv/video_player_screen.dart';
 import '../../../widgets/live_pitch_tracker_widget.dart';
+import '../../predictions/prediction_card_widget.dart';
+import '../../../providers/prediction_provider.dart';
 
 class OverviewTab extends ConsumerStatefulWidget {
   final Fixture fixture;
@@ -121,6 +123,18 @@ class _OverviewTabState extends ConsumerState<OverviewTab> {
       padding: const EdgeInsets.all(16.0),
       children: [
         _buildMatchHeaderCard(context),
+        // ── AI Match Forecast Card ───────────────────────────────────────
+        ref.watch(fixturePredictionProvider(fixture.id)).when(
+          data: (prediction) => Padding(
+            padding: const EdgeInsets.only(top: 12.0),
+            child: PredictionCardWidget(
+              prediction: prediction,
+              fixtureId: fixture.id,
+            ),
+          ),
+          loading: () => const SizedBox.shrink(),
+          error: (_, __) => const SizedBox.shrink(),
+        ),
         const SizedBox(height: 16),
         // ── 2D LIVE TRACKER: ONLY for LIVE matches! ───
         if (fixture.isLive) ...[

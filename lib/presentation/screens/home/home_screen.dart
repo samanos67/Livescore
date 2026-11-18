@@ -9,6 +9,7 @@ import '../../../domain/entities/fixture.dart';
 import '../search/search_screen.dart';
 import '../favourites/favourites_screen.dart';
 import '../news/news_screen.dart';
+import '../predictions/predictions_screen.dart';
 
 class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
@@ -143,6 +144,14 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
           ],
         ),
         actions: [
+          IconButton(
+            icon: const Icon(Icons.smart_toy_rounded, color: Color(0xFF00D084)),
+            tooltip: 'AI Match Predictions',
+            onPressed: () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const PredictionsScreen()),
+            ),
+          ),
           IconButton(
             icon: const Icon(Icons.newspaper_outlined),
             tooltip: 'World & Club News',

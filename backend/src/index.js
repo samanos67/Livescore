@@ -5,6 +5,7 @@ const axios     = require('axios');
 const NodeCache = require('node-cache');
 const RSSParser = require('rss-parser');
 const espnService = require('./espnService');
+const predictionService = require('./predictionService');
 
 const app    = express();
 const PORT   = process.env.PORT || 3000;
@@ -19,18 +20,19 @@ const YOUTUBE_API_KEY   = process.env.YOUTUBE_API_KEY || 'AIzaSyA1D3kBxN8i4pkom9
 const cache = new NodeCache({ stdTTL: 30, checkperiod: 10 });
 
 const TTL = {
-  LIVE:       3,              // 3 seconds (instant live scores)
-  FIXTURES:   3600 * 6,       // 6 hours
-  STANDINGS:  3600 * 6,       // 6 hours (was 24h — now shorter to pick up live updates)
-  LINEUPS:    3600 * 24,      // 24 hours
-  STATS:      5,              // 5 seconds (instant live match stats)
-  EVENTS:     4,              // 4 seconds (instant live match timeline/goals)
-  H2H:        3600 * 24 * 7,  // 7 days
-  TEAM:       3600 * 24,      // 24 hours
-  SQUAD:      3600 * 24 * 7,  // 7 days
-  TEAM_FIX:   3600 * 6,       // 6 hours
-  NEWS:       60 * 30,        // 30 minutes
-  HIGHLIGHTS: 3600 * 6,       // 6 hours
+  LIVE:        3,              // 3 seconds (instant live scores)
+  FIXTURES:    3600 * 6,       // 6 hours
+  STANDINGS:   3600 * 6,       // 6 hours (was 24h — now shorter to pick up live updates)
+  LINEUPS:     3600 * 24,      // 24 hours
+  STATS:       5,              // 5 seconds (instant live match stats)
+  EVENTS:      4,              // 4 seconds (instant live match timeline/goals)
+  H2H:         3600 * 24 * 7,  // 7 days
+  TEAM:        3600 * 24,      // 24 hours
+  SQUAD:       3600 * 24 * 7,  // 7 days
+  TEAM_FIX:    3600 * 6,       // 6 hours
+  NEWS:        60 * 30,        // 30 minutes
+  HIGHLIGHTS:  3600 * 6,       // 6 hours
+  PREDICTIONS: 3600 * 6,       // 6 hours
 };
 
 // ─── Axios clients ────────────────────────────────────────────────────────────
@@ -1679,6 +1681,118 @@ app.get('/fixtures/h2h/:homeId/:awayId', async (req, res) => {
   }
 });
 
+// ─── AI Predictions Endpoints ─────────────────────────────────────────────────
+// GET /predictions/today
+// Returns AI predictions for top matches taking place today
+app.get('/predictions/today', async (req, res) => {
+  const todayStr = new Date().toISOString().slice(0, 10);
+  const cacheKey = `predictions_today_${todayStr}`;
+  const cached   = getCached(cacheKey);
+  if (cached) return res.json({ response: cached, source: 'cache', count: cached.length });
+
+  try {
+    let fixtures = [];
+
+    // 1. Try daily matches from ESPN service
+    try {
+      const espnMatches = await espnService.getFixturesByDate(todayStr);
+      if (espnMatches && espnMatches.length > 0) {
+        fixtures = espnMatches;
+        for (const f of espnMatches) {
+          MATCH_LOOKUP.set(Number(f.fixture.id), f);
+        }
+      }
+    } catch (e) {
+      console.warn('[predictions/today] ESPN error:', e.message);
+    }
+
+    // 2. Fallback to season fixtures
+    if (fixtures.length === 0 && ALL_SEASON_FIXTURES.length > 0) {
+      fixtures = ALL_SEASON_FIXTURES.filter(f => f.fixture?.date?.slice(0, 10) === todayStr);
+    }
+
+    // 3. Fallback to any available upcoming fixtures if today has no matches yet
+    if (fixtures.length === 0 && ALL_SEASON_FIXTURES.length > 0) {
+      fixtures = ALL_SEASON_FIXTURES.slice(0, 15);
+    }
+
+    const topFixtures = fixtures.slice(0, 15);
+    const predictions = [];
+
+    for (const match of topFixtures) {
+      try {
+        const pred = await predictionService.generatePrediction(match);
+        predictions.push(pred);
+      } catch (err) {
+        console.warn(`[predictions/today] Error for fixture ${match.fixture?.id}:`, err.message);
+      }
+    }
+
+    // Sort by highest confidence first
+    predictions.sort((a, b) => b.confidence - a.confidence);
+
+    setCache(cacheKey, predictions, TTL.PREDICTIONS);
+    return res.json({ response: predictions, source: 'ai-prediction-engine', count: predictions.length });
+  } catch (err) {
+    console.error('[predictions/today] Error:', err.message);
+    res.status(500).json({ error: 'Failed to generate predictions for today', message: err.message });
+  }
+});
+
+// GET /predictions/:fixtureId
+// Returns detailed AI prediction and tactical breakdown for a specific fixture
+app.get('/predictions/:fixtureId', async (req, res) => {
+  const { fixtureId } = req.params;
+  const fid = Number(fixtureId);
+  const cacheKey = `prediction_${fixtureId}`;
+  const cached = getCached(cacheKey);
+  if (cached) return res.json({ response: cached, source: 'cache' });
+
+  try {
+    let match = MATCH_LOOKUP.get(fid);
+    if (!match && ALL_SEASON_FIXTURES.length > 0) {
+      match = ALL_SEASON_FIXTURES.find(f => Number(f.fixture?.id) === fid);
+    }
+
+    if (!match) {
+      const todayStr = new Date().toISOString().slice(0, 10);
+      try {
+        const espnMatches = await espnService.getFixturesByDate(todayStr);
+        if (espnMatches && espnMatches.length > 0) {
+          for (const f of espnMatches) {
+            MATCH_LOOKUP.set(Number(f.fixture.id), f);
+          }
+          match = MATCH_LOOKUP.get(fid);
+        }
+      } catch (e) {}
+    }
+
+    if (!match) {
+      return res.status(404).json({ error: `Fixture ${fixtureId} not found` });
+    }
+
+    const homeTeam = match.teams?.home;
+    const awayTeam = match.teams?.away;
+    const h2h = [];
+    if (ALL_SEASON_FIXTURES.length > 0 && homeTeam?.id && awayTeam?.id) {
+      for (const f of ALL_SEASON_FIXTURES) {
+        const hid = f.teams?.home?.id;
+        const aid = f.teams?.away?.id;
+        if ((hid === homeTeam.id && aid === awayTeam.id) || (hid === awayTeam.id && aid === homeTeam.id)) {
+          h2h.push(f);
+        }
+      }
+    }
+
+    const prediction = await predictionService.generatePrediction(match, {}, {}, h2h);
+    setCache(cacheKey, prediction, TTL.PREDICTIONS);
+    return res.json({ response: prediction, source: 'ai-prediction-engine' });
+  } catch (err) {
+    console.error(`[prediction] Error generating prediction for ${fixtureId}:`, err.message);
+    res.status(500).json({ error: 'Failed to generate prediction', message: err.message });
+  }
+});
+
 // ─── App Landing Page (Developer Site) ─────────────────────────────────────────
 app.get('/', (req, res) => {
   res.setHeader('Content-Type', 'text/html');
@@ -1906,7 +2020,9 @@ app.listen(PORT, () => {
   console.log(`   GET /teams/:teamId/squad                 ← NEW`);
   console.log(`   GET /teams/:teamId/fixtures              ← NEW`);
   console.log(`   GET /news?team=                          ← NEW`);
-  console.log(`   GET /highlights?team=                    ← NEW\n`);
+  console.log(`   GET /highlights?team=                    ← NEW`);
+  console.log(`   GET /predictions/today                   ← NEW (AI Match Forecasts)`);
+  console.log(`   GET /predictions/:fixtureId              ← NEW (AI Match Forecasts)\n`);
 
   // ── Keep-Alive Self-Ping ──
   const PING_URL = process.env.SELF_PING_URL || `http://localhost:${PORT}`;
