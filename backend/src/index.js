@@ -1687,7 +1687,8 @@ app.get('/fixtures/h2h/:homeId/:awayId', async (req, res) => {
 app.get('/predictions/today', async (req, res) => {
   const todayStr = new Date().toISOString().slice(0, 10);
   const cacheKey = `predictions_today_${todayStr}`;
-  const cached   = getCached(cacheKey);
+  const isRefresh = req.query.refresh === 'true' || req.query.fresh === 'true';
+  const cached   = isRefresh ? null : getCached(cacheKey);
   if (cached) return res.json({ response: cached, source: 'cache', count: cached.length });
 
   try {
@@ -1745,7 +1746,8 @@ app.get('/predictions/:fixtureId', async (req, res) => {
   const { fixtureId } = req.params;
   const fid = Number(fixtureId);
   const cacheKey = `prediction_${fixtureId}`;
-  const cached = getCached(cacheKey);
+  const isRefresh = req.query.refresh === 'true' || req.query.fresh === 'true';
+  const cached = isRefresh ? null : getCached(cacheKey);
   if (cached) return res.json({ response: cached, source: 'cache' });
 
   try {

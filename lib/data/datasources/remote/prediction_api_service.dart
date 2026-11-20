@@ -10,10 +10,10 @@ class PredictionApiService {
 
   String get _base => ApiConstants.backendUrl;
 
-  Future<MatchPredictionModel> getPredictionForFixture(int fixtureId) async {
+  Future<MatchPredictionModel> getPredictionForFixture(int fixtureId, {bool refresh = false}) async {
     try {
       final response = await dio.get(
-        '$_base/predictions/$fixtureId',
+        '$_base/predictions/$fixtureId${refresh ? "?refresh=true" : ""}',
         options: Options(receiveTimeout: const Duration(seconds: 15)),
       );
 
@@ -33,10 +33,10 @@ class PredictionApiService {
     }
   }
 
-  Future<List<MatchPredictionModel>> getTodayPredictions() async {
+  Future<List<MatchPredictionModel>> getTodayPredictions({bool refresh = false}) async {
     try {
       final response = await dio.get(
-        '$_base/predictions/today',
+        '$_base/predictions/today${refresh ? "?refresh=true" : ""}',
         options: Options(receiveTimeout: const Duration(seconds: 20)),
       );
 

@@ -23,14 +23,16 @@ class PredictionRepositoryImpl implements PredictionRepository {
   PredictionRepositoryImpl(this.remoteDataSource);
 
   @override
-  Future<Either<Failure, MatchPrediction>> getPredictionForFixture(int fixtureId) async {
-    final cached = _fixtureCache[fixtureId];
-    if (cached != null && !cached.isExpired) {
-      return Right(cached.data);
+  Future<Either<Failure, MatchPrediction>> getPredictionForFixture(int fixtureId, {bool refresh = false}) async {
+    if (!refresh) {
+      final cached = _fixtureCache[fixtureId];
+      if (cached != null && !cached.isExpired) {
+        return Right(cached.data);
+      }
     }
 
     try {
-      final prediction = await remoteDataSource.getPredictionForFixture(fixtureId);
+      final prediction = await remoteDataSource.getPredictionForFixture(fixtureId, refresh: refresh);
       _fixtureCache[fixtureId] = _CacheEntry(prediction, _predictionTtl);
       return Right(prediction);
     } on ServerException {
@@ -41,14 +43,16 @@ class PredictionRepositoryImpl implements PredictionRepository {
   }
 
   @override
-  Future<Either<Failure, List<MatchPrediction>>> getTodayPredictions() async {
-    final cached = _todayCache;
-    if (cached != null && !cached.isExpired) {
-      return Right(cached.data);
+  Future<Either<Failure, List<MatchPrediction>>> getTodayPredictions({bool refresh = false}) async {
+    if (!refresh) {
+      final cached = _todayCache;
+      if (cached != null && !cached.isExpired) {
+        return Right(cached.data);
+      }
     }
 
     try {
-      final list = await remoteDataSource.getTodayPredictions();
+      final list = await remoteDataSource.getTodayPredictions(refresh: refresh);
       if (list.isNotEmpty) {
         _todayCache = _CacheEntry(list, _predictionTtl);
       }
