@@ -156,11 +156,41 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
 
                     // Tagline
                     const Text(
-                      'Live Scores • Real-Time Stats • Streams',
+                      'Live Scores • AI Match Predictions • Stats',
                       style: TextStyle(
                         color: Colors.grey,
                         fontSize: 12,
                         letterSpacing: 0.8,
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+
+                    // AI Powered Pill
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF00D084).withOpacity(0.12),
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(
+                          color: const Color(0xFF00D084).withOpacity(0.35),
+                          width: 1,
+                        ),
+                      ),
+                      child: const Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(Icons.smart_toy_rounded, color: Color(0xFF00D084), size: 14),
+                          SizedBox(width: 6),
+                          Text(
+                            'Powered by AI Forecasts',
+                            style: TextStyle(
+                              color: Color(0xFF00D084),
+                              fontSize: 11,
+                              fontWeight: FontWeight.bold,
+                              letterSpacing: 0.4,
+                            ),
+                          ),
+                        ],
                       ),
                     ),
                   ],
@@ -186,7 +216,7 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
                 ),
                 const SizedBox(height: 14),
                 Text(
-                  'v1.0.0',
+                  'v1.0.1',
                   style: TextStyle(
                     color: Colors.grey.withOpacity(0.6),
                     fontSize: 11,
